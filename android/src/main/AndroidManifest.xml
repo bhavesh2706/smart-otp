@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!--
+    The SMS Retriever and SMS User Consent APIs require NO SMS permissions
+    (no RECEIVE_SMS / READ_SMS). Google Play Services delivers the message
+    directly to the dynamically-registered broadcast receiver. This manifest is
+    intentionally permission-free.
+  -->
+</manifest>

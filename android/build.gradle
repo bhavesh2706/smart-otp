@@ -1,0 +1,76 @@
+// The Android Gradle Plugin and Kotlin plugin are provided by the host app's
+// buildscript classpath (React Native / Expo apps already include them). The
+// library must NOT redeclare those classpath versions, otherwise it can force a
+// Kotlin/AGP version that conflicts with the host (e.g. Expo's Compose compiler).
+
+def reactNativeArchitectures() {
+  def value = rootProject.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
+def isNewArchitectureEnabled() {
+  return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+if (isNewArchitectureEnabled()) {
+  apply plugin: "com.facebook.react"
+}
+
+def getExtOrIntegerDefault = { name ->
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["SmartOtp_" + name]).toInteger()
+}
+
+android {
+  namespace "com.smartotp"
+
+  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lintOptions {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  sourceSets {
+    main {
+      if (isNewArchitectureEnabled()) {
+        java.srcDirs += ["generated/java", "generated/jni"]
+      }
+    }
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  implementation "com.facebook.react:react-native:+"
+  implementation "androidx.core:core-ktx:1.13.1"
+  // Google Play Services SMS Retriever / User Consent APIs.
+  implementation "com.google.android.gms:play-services-auth:21.2.0"
+  implementation "com.google.android.gms:play-services-auth-api-phone:18.1.0"
+}

@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a problem with react-native-smart-otp
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for filing a bug. A minimal reproduction makes fixes far faster.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: What happened, and what did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Steps to reproduce, or a link to a minimal repro (Snack/repo).
+      placeholder: |
+        1. Render `<SmartOTPInput length={6} ... />`
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Relevant code
+      render: tsx
+  - type: input
+    id: lib-version
+    attributes:
+      label: react-native-smart-otp version
+    validations:
+      required: true
+  - type: input
+    id: rn-version
+    attributes:
+      label: React Native / Expo version
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform(s)
+      multiple: true
+      options:
+        - iOS
+        - Android
+        - Expo Go
+        - Web
+    validations:
+      required: true
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Architecture
+      options:
+        - New Architecture (Fabric/TurboModules)
+        - Old Architecture
+        - Not sure
+    validations:
+      required: true

@@ -1,0 +1,11 @@
+node_modules/
+lib/
+coverage/
+*.log
+.DS_Store
+.eslintcache
+
+# Build artifacts
+android/build/
+ios/build/
+*.tgz

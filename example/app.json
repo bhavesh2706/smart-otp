@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Smart OTP Example",
+    "slug": "react-native-smart-otp-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.smartotp.example"
+    },
+    "android": {
+      "package": "com.smartotp.example"
+    },
+    "plugins": [
+      "react-native-smart-otp",
+      "expo-status-bar"
+    ]
+  }
+}

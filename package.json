@@ -1,0 +1,146 @@
+{
+  "name": "react-native-smart-otp",
+  "version": "1.0.0",
+  "description": "Enterprise-grade OTP / PIN input for React Native and Expo with autofill, accessibility, theming and the New Architecture.",
+  "main": "./lib/commonjs/index.js",
+  "module": "./lib/module/index.js",
+  "types": "./lib/typescript/commonjs/src/index.d.ts",
+  "react-native": "src/index.tsx",
+  "source": "src/index.tsx",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/typescript/module/src/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      }
+    },
+    "./package.json": "./package.json",
+    "./app.plugin.js": "./app.plugin.js"
+  },
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "app.plugin.js",
+    "!**/__tests__",
+    "!**/__mocks__",
+    "!**/*.map",
+    "!**/.*"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "format": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "test": "jest",
+    "build": "bob build",
+    "size": "size-limit",
+    "prepack": "bob build",
+    "clean": "del-cli lib"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "otp",
+    "pin",
+    "one-time-password",
+    "sms",
+    "autofill",
+    "sms-retriever",
+    "accessibility",
+    "turbomodule",
+    "fabric",
+    "new-architecture"
+  ],
+  "license": "MIT",
+  "author": "react-native-smart-otp contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seaculum/react-native-smart-otp.git"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "@react-native-clipboard/clipboard": "*"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-clipboard/clipboard": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@react-native/babel-preset": "0.76.5",
+    "@testing-library/react-native": "13.2.0",
+    "@types/jest": "29.5.14",
+    "@types/react": "18.3.12",
+    "del-cli": "6.0.0",
+    "eslint": "8.57.1",
+    "@typescript-eslint/eslint-plugin": "8.18.0",
+    "@typescript-eslint/parser": "8.18.0",
+    "eslint-plugin-react": "7.37.2",
+    "eslint-plugin-react-hooks": "5.1.0",
+    "jest": "29.7.0",
+    "prettier": "3.4.2",
+    "react": "18.3.1",
+    "react-hook-form": "7.54.2",
+    "react-native": "0.76.5",
+    "react-native-builder-bob": "0.32.1",
+    "react-test-renderer": "18.3.1",
+    "size-limit": "11.1.6",
+    "@size-limit/preset-small-lib": "11.1.6",
+    "semantic-release": "24.2.1",
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/git": "10.0.1",
+    "typescript": "5.7.2"
+  },
+  "codegenConfig": {
+    "name": "RNSmartOtpSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.smartotp"
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "esm": true
+        }
+      ]
+    ]
+  },
+  "jest": {
+    "preset": "react-native",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/lib/"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/**/__tests__/**"
+    ]
+  }
+}
