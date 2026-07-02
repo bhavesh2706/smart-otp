@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
   },
   // Centered spinner over the cell row during loading.
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     // `pointerEvents` in style (not the deprecated prop) — Fabric-safe.

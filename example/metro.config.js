@@ -2,41 +2,38 @@
 // is installed via a `file:..` symlink and the parent has its own
 // `react` / `react-native` dev deps. A symlinked package resolves `react` from
 // the parent's node_modules by the natural module walk, producing a second copy
-// of React and the dreaded "Cannot read property 'useState' of null".
+// of React and hook errors like "Cannot read property 'useSyncExternalStore' of
+// null".
 //
-// `resolveRequest` hard-redirects every `react` / `react-native` request to the
-// example's copy regardless of which file imports it, guaranteeing a single
-// React instance. `nodeModulesPaths` lets the library resolve its other
-// dependencies (e.g. @babel/runtime) from the example.
+// `resolveRequest` hard-redirects every `react` / `react-native` import (incl.
+// subpaths like `react/jsx-runtime`) to the example's node_modules regardless
+// of which file requested it. Do NOT add `resolver.nodeModulesPaths` — on Expo
+// SDK 57 it fights built-in workspace detection and can break Metro's
+// transformer (500 / transformFile undefined).
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
 const projectRoot = __dirname;
-const workspaceRoot = path.resolve(projectRoot, '..');
+const libraryRoot = path.resolve(projectRoot, '..');
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = [workspaceRoot];
-
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(workspaceRoot, 'node_modules'),
-];
+config.watchFolders = [libraryRoot];
 
 const exampleEntry = path.join(projectRoot, 'index.js');
-const isReactPackage = (name) =>
-  name === 'react' ||
-  name === 'react-native' ||
-  name.startsWith('react/') ||
-  name.startsWith('react-native/');
+const isReactPackage = (moduleName) =>
+  moduleName === 'react' ||
+  moduleName === 'react-native' ||
+  moduleName.startsWith('react/') ||
+  moduleName.startsWith('react-native/');
 
 const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   const resolve = defaultResolveRequest ?? context.resolveRequest;
   if (isReactPackage(moduleName)) {
-    // Resolve as if imported from the example's own entry file, so React always
-    // comes from the example's node_modules — never the symlinked parent's.
+    // Resolve as if imported from the example entry so React always comes from
+    // the example's node_modules — never the symlinked parent's.
     return resolve(
       { ...context, originModulePath: exampleEntry },
       moduleName,
