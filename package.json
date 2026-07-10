@@ -75,7 +75,7 @@
     }
   },
   "devDependencies": {
-    "@eslint/js": "9.39.4",
+    "@eslint/js": "10.0.1",
     "@react-native/babel-preset": "0.86.0",
     "@react-native/jest-preset": "^0.86.0",
     "@semantic-release/changelog": "6.0.3",
@@ -87,12 +87,12 @@
     "@typescript-eslint/eslint-plugin": "8.63.0",
     "@typescript-eslint/parser": "8.63.0",
     "del-cli": "7.0.0",
-    "eslint": "9.39.4",
+    "eslint": "10.6.0",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.7.0",
     "jest": "30.4.2",
-    "prettier": "3.9.4",
+    "prettier": "3.9.5",
     "react": "19.2.7",
     "react-hook-form": "7.81.0",
     "react-native": "0.86.0",
