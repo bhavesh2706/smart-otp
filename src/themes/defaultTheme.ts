@@ -37,6 +37,30 @@ export interface SmartOTPTheme {
    * and leave this `undefined`.
    */
   readonly fontWeight?: TextStyle['fontWeight'];
+  /**
+   * Cell opacity while `disabled`. Optional; defaults to
+   * {@link themeDefaults.disabledOpacity}.
+   */
+  readonly disabledOpacity?: number;
+  /**
+   * Cell-row opacity while a verification is in flight. Optional; defaults to
+   * {@link themeDefaults.loadingOpacity}.
+   */
+  readonly loadingOpacity?: number;
+  /** Blinking-caret width in dp. Optional; defaults to `2`. */
+  readonly cursorWidth?: number;
+  /** Blinking-caret corner radius in dp. Optional; defaults to `1`. */
+  readonly cursorRadius?: number;
+  /** Caret height as a multiple of `fontSize`. Optional; defaults to `1.1`. */
+  readonly cursorHeightRatio?: number;
+  /** Caret fade duration per half-blink (ms). Optional; defaults to `450`. */
+  readonly cursorBlinkDuration?: number;
+  /** Caret hold before fading out (ms). Optional; defaults to `250`. */
+  readonly cursorBlinkDelay?: number;
+  /** Gap between a filled digit and its caret in dp. Optional; defaults to `2`. */
+  readonly contentGap?: number;
+  /** Max Dynamic Type scale for the digit text. Optional; defaults to `1.4`. */
+  readonly maxFontSizeMultiplier?: number;
   readonly colors: {
     readonly text: string;
     readonly placeholder: string;
@@ -48,6 +72,10 @@ export interface SmartOTPTheme {
     readonly borderFilled: string;
     readonly borderError: string;
     readonly borderSuccess: string;
+    /** Blinking-caret color. Optional; defaults to `borderFocused`. */
+    readonly cursor?: string;
+    /** Loading-spinner color. Optional; defaults to `borderFocused`. */
+    readonly spinner?: string;
   };
 }
 
@@ -67,21 +95,37 @@ function baseColors(scheme: ColorScheme): SmartOTPTheme['colors'] {
 }
 
 /**
+ * Fields shared by every built-in theme. Each `get*Theme` builder overrides
+ * only the handful of values that make its variant distinct, so the common
+ * sizing/typography is stated once.
+ */
+type ThemeShape = Omit<SmartOTPTheme, 'colors'>;
+
+const COMMON_THEME: ThemeShape = {
+  variant: 'box',
+  cellSize: 48,
+  cellGap: spacing.sm,
+  cellRadius: radius.md,
+  cellBorderWidth: 1.5,
+  fontSize: typography.cellFontSize,
+  fontWeight: typography.cellFontWeight,
+};
+
+/** Build a theme from the shared base, applying a variant's overrides. */
+function buildTheme(
+  scheme: ColorScheme,
+  overrides: Partial<ThemeShape>
+): SmartOTPTheme {
+  return { ...COMMON_THEME, ...overrides, colors: baseColors(scheme) };
+}
+
+/**
  * The Outlined (box) theme — a full border on every side. This is the default.
  *
  * @param scheme - `'light'` or `'dark'`. Defaults to `'light'`.
  */
 export function getDefaultTheme(scheme: ColorScheme = 'light'): SmartOTPTheme {
-  return {
-    variant: 'box',
-    cellSize: 48,
-    cellGap: spacing.sm,
-    cellRadius: radius.md,
-    cellBorderWidth: 1.5,
-    fontSize: typography.cellFontSize,
-    fontWeight: typography.cellFontWeight,
-    colors: baseColors(scheme),
-  };
+  return buildTheme(scheme, { variant: 'box' });
 }
 
 /** Alias of {@link getDefaultTheme} for explicit Outlined styling. */
@@ -94,16 +138,11 @@ export const getOutlinedTheme = getDefaultTheme;
  * @param scheme - `'light'` or `'dark'`. Defaults to `'light'`.
  */
 export function getFilledTheme(scheme: ColorScheme = 'light'): SmartOTPTheme {
-  return {
+  return buildTheme(scheme, {
     variant: 'filled',
-    cellSize: 48,
-    cellGap: spacing.sm,
     cellRadius: radius.sm,
     cellBorderWidth: 2,
-    fontSize: typography.cellFontSize,
-    fontWeight: typography.cellFontWeight,
-    colors: baseColors(scheme),
-  };
+  });
 }
 
 /**
@@ -112,24 +151,22 @@ export function getFilledTheme(scheme: ColorScheme = 'light'): SmartOTPTheme {
  * @param scheme - `'light'` or `'dark'`. Defaults to `'light'`.
  */
 export function getMinimalTheme(scheme: ColorScheme = 'light'): SmartOTPTheme {
-  return {
+  return buildTheme(scheme, {
     variant: 'underline',
     cellSize: 44,
     cellGap: spacing.md,
     cellRadius: 0,
     cellBorderWidth: 2,
-    fontSize: typography.cellFontSize,
-    fontWeight: typography.cellFontWeight,
-    colors: baseColors(scheme),
-  };
+  });
 }
 
 /**
  * Partial overrides for {@link createTheme}. Top-level fields are optional and
  * `colors` may be a partial subset — only the keys you pass are replaced.
  */
-export interface SmartOTPThemeOverrides
-  extends Partial<Omit<SmartOTPTheme, 'colors'>> {
+export interface SmartOTPThemeOverrides extends Partial<
+  Omit<SmartOTPTheme, 'colors'>
+> {
   readonly colors?: Partial<SmartOTPTheme['colors']>;
 }
 
@@ -156,4 +193,65 @@ export function createTheme(
     ...overrides,
     colors: { ...base.colors, ...overrides.colors },
   };
+}
+
+/**
+ * A function that returns the theme for a given color scheme. Use it to make a
+ * custom theme follow the OS light/dark setting automatically.
+ *
+ * @example
+ * ```tsx
+ * <SmartOTPInput
+ *   theme={(scheme) =>
+ *     createTheme(getOutlinedTheme(scheme), {
+ *       colors: { borderFocused: scheme === 'dark' ? '#8B5CF6' : '#7C3AED' },
+ *     })
+ *   }
+ * />
+ * ```
+ */
+export type SmartOTPThemeResolver = (scheme: ColorScheme) => SmartOTPTheme;
+
+/** A pre-built pair of themes, one per color scheme. */
+export interface SmartOTPThemePair {
+  readonly light: SmartOTPTheme;
+  readonly dark: SmartOTPTheme;
+}
+
+/**
+ * Everything accepted by the `theme` prop / provider. Any of:
+ *
+ * - a static {@link SmartOTPTheme} (fixed colors, as before);
+ * - a {@link SmartOTPThemeResolver} `(scheme) => theme` for full per-scheme control;
+ * - a {@link SmartOTPThemePair} `{ light, dark }` for the simple two-theme case.
+ *
+ * The last two follow the OS color scheme automatically.
+ */
+export type SmartOTPThemeInput =
+  SmartOTPTheme | SmartOTPThemeResolver | SmartOTPThemePair;
+
+/** Type guard: a `{ light, dark }` pair (not a plain theme, which has `colors`). */
+function isThemePair(input: object): input is SmartOTPThemePair {
+  return 'light' in input && 'dark' in input && !('colors' in input);
+}
+
+/**
+ * Resolve a {@link SmartOTPThemeInput} to a concrete {@link SmartOTPTheme} for
+ * the active `scheme`. Returns `undefined` for `undefined` input so callers can
+ * chain fallbacks (`resolveTheme(prop) ?? resolveTheme(ctx) ?? getDefaultTheme()`).
+ */
+export function resolveTheme(
+  input: SmartOTPThemeInput | undefined | null,
+  scheme: ColorScheme
+): SmartOTPTheme | undefined {
+  if (input == null) {
+    return undefined;
+  }
+  if (typeof input === 'function') {
+    return input(scheme);
+  }
+  if (isThemePair(input)) {
+    return input[scheme];
+  }
+  return input;
 }

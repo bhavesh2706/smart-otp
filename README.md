@@ -2,12 +2,22 @@
 
 [![CI](https://github.com/seaculum/react-native-smart-otp/actions/workflows/ci.yml/badge.svg)](https://github.com/seaculum/react-native-smart-otp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/react-native-smart-otp.svg)](https://www.npmjs.com/package/react-native-smart-otp)
-[![bundle](https://img.shields.io/badge/core-2.7kB%20brotli-success)](.size-limit.json)
+[![bundle](https://img.shields.io/badge/core-4.9kB%20brotli-success)](.size-limit.json)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Enterprise-grade OTP / PIN input for **React Native** and **Expo**, with platform
 autofill, first-class accessibility, theming, dark mode, RTL and the New
-Architecture (Fabric / TurboModules). Zero runtime dependencies; ~2.7 kB core.
+Architecture (Fabric / TurboModules). Zero runtime dependencies; ~4.9 kB core
+(~6.9 kB full public API, brotli).
+
+## Demo
+
+Android screen recordings from the [example app](example/) on a physical device
+(New Architecture):
+
+| Kitchen-sink overview | Verify flow (error shake) |
+| --- | --- |
+| ![Kitchen-sink overview](docs/demo/android-otp-demo-1.gif) | ![Verify flow with error shake](docs/demo/android-otp-demo-2.gif) |
 
 ## Why
 
@@ -24,12 +34,22 @@ npm install react-native-smart-otp
 yarn add react-native-smart-otp
 ```
 
-`react` and `react-native` are peer dependencies. No other runtime dependencies.
+`react` and `react-native` are peer dependencies. No other **required** runtime
+dependencies.
 
-- **React Native CLI:** works out of the box (pure JS in Milestone 1).
-- **Expo:** works in Development Builds **and** Expo Go in Milestone 1 — there is
-  no native code yet, so nothing to prebuild. Native SMS features in later
-  milestones ship with a config plugin and graceful Expo Go fallbacks.
+| Consumer | Setup |
+| --- | --- |
+| **React Native CLI** | `npm install react-native-smart-otp` — the Android SMS TurboModule autolinks. Rebuild the native app after install. |
+| **Expo (dev build)** | `npx expo run:android` / `run:ios` — full feature set, including Android SMS Retriever. Optionally add `{ "plugins": ["react-native-smart-otp"] }` to `app.json`. |
+| **Expo Go / web** | JS-only features work (UI, themes, timer, iOS `oneTimeCode`). Android SMS and clipboard need a dev build or the optional clipboard peer (see below). Unsupported capabilities degrade gracefully — never throw. |
+
+**Optional peer:** [`@react-native-clipboard/clipboard`](https://github.com/react-native-clipboard/clipboard)
+for clipboard auto-fill (`useClipboardPaste` / `useOtpAutofill`). Install it in
+your app when you want that source enabled.
+
+**Tested with:** React 19, React Native 0.86, Expo SDK 57 (example app). New
+Architecture (Fabric / TurboModules) is the primary target; the JS surface
+degrades when native modules are absent.
 
 ## Quick start
 
@@ -77,8 +97,14 @@ ref.current?.setValue('123456');
 | `maskSymbol` | `string` | `'●'` | Glyph used while masking. |
 | `type` | `'numeric' \| 'alphanumeric'` | `'numeric'` | Accepted character set. |
 | `disabled` | `boolean` | `false` | Disable input and dim cells. |
-| `editableCells` | `boolean` | `true` | Tap any cell to edit that digit (next keystroke overwrites it). |
+| `editableCells` | `boolean` | `true` | Tap any cell to edit that digit. Middle deletes leave a positional "hole" (a space in `value`) until refilled; use `stripHoles(value)` for the compact code. |
 | `error` | `boolean` | `false` | Render cells in the error state. |
+| `success` | `boolean` | `false` | Render cells in the success state. |
+| `onVerify` | `(code) => Promise<boolean>` | — | Async verify on complete → auto loading / success / error. |
+| `onError` | `(error) => void` | — | Called if `onVerify` rejects. |
+| `loading` | `boolean` | `false` | Force loading state (spinner, dims cells, blocks typing). |
+| `renderLoading` | `() => ReactElement` | — | Custom loading indicator. |
+| `animated` | `boolean` | `true` | Error shake / success pop (reduce-motion aware). |
 | `placeholder` | `string` | — | Glyph shown in empty cells. |
 | `placeholderTextColor` | `string` | theme | Placeholder color. |
 | `autoCompleteType` | `'sms-otp' \| 'off'` | `'sms-otp'` | One-time-code autofill strategy. |
@@ -86,8 +112,12 @@ ref.current?.setValue('123456');
 | `allowFontScaling` | `boolean` | `true` | Honor OS Dynamic Type. |
 | `theme` | `SmartOTPTheme` | built-in | Theme override. |
 | `containerStyle` | `StyleProp<ViewStyle>` | — | Root row style. |
-| `cellStyle` / `cellFocusedStyle` / `cellFilledStyle` / `cellErrorStyle` | `ViewStyle` | — | Per-state cell overrides. |
+| `cellStyle` / `cellFocusedStyle` / `cellFilledStyle` / `cellErrorStyle` / `cellSuccessStyle` | `ViewStyle` | — | Per-state cell overrides. |
 | `textStyle` | `TextStyle` | — | Digit text style. |
+| `renderCell` | `(info) => ReactElement` | — | Replace the built-in cell UI entirely. |
+| `onFocus` / `onBlur` | `() => void` | — | Focus callbacks (e.g. keyboard avoidance). |
+| `blurOnKeyboardHide` | `boolean` | `true` | Blur when the software keyboard dismisses. |
+| `labels` | `SmartOTPLabelsInput` | — | i18n overrides for a11y strings (merged over defaults / provider). |
 | `accessibilityLabel` | `string` | generated | Label for the input. |
 | `accessibilityHint` | `string` | — | Screen-reader hint. |
 | `testID` | `string` | — | Applied to the underlying input. |
@@ -126,10 +156,19 @@ import { SmartOTPProvider, getMinimalTheme } from 'react-native-smart-otp';
 </SmartOTPProvider>;
 ```
 
-A theme is a plain object (`SmartOTPTheme`) — override any of
-`cellSize` / `cellGap` / `cellRadius` / `cellBorderWidth` / `fontSize` /
-`fontFamily` / `fontWeight` / `variant` / `colors`. Use `createTheme` to override
-just what you need (it shallow-merges `colors` for you):
+A theme is a plain object (`SmartOTPTheme`). **Every** visual value is a token
+with a sensible default, so you set only what you want and override anything:
+
+- **Layout / type:** `cellSize` · `cellGap` · `cellRadius` · `cellBorderWidth` ·
+  `fontSize` · `fontFamily` · `fontWeight` · `variant`
+- **Caret:** `colors.cursor` · `cursorWidth` · `cursorRadius` ·
+  `cursorHeightRatio` · `cursorBlinkDuration` · `cursorBlinkDelay`
+- **State:** `disabledOpacity` · `loadingOpacity` · `colors.spinner`
+- **Spacing / scaling:** `contentGap` (digit↔caret) · `maxFontSizeMultiplier`
+- **Colors:** `text` · `placeholder` · `background` · `surface` · `border` ·
+  `borderFocused` · `borderFilled` · `borderError` · `borderSuccess`
+
+Use `createTheme` to override just what you need (it shallow-merges `colors`):
 
 ```tsx
 import { SmartOTPInput, createTheme, getOutlinedTheme } from 'react-native-smart-otp';
@@ -139,11 +178,45 @@ const theme = createTheme(getOutlinedTheme('dark'), {
   fontWeight: undefined, // see note below
   cellSize: 56,
   cellRadius: 14,
-  colors: { borderFocused: '#7C3AED' },
+  disabledOpacity: 0.3,
+  cursorWidth: 3,
+  colors: { borderFocused: '#7C3AED', cursor: '#7C3AED' },
 });
 
 <SmartOTPInput length={6} theme={theme} />;
 ```
+
+The defaults live in the exported `themeDefaults` object if you want to read or
+extend them.
+
+#### Dynamic dark / light
+
+The `theme` prop (and the provider) accept **three** shapes. The last two follow
+the OS color scheme automatically — no manual `useColorScheme` wiring:
+
+```tsx
+// 1. Static — fixed colors (as above).
+<SmartOTPInput length={6} theme={getFilledTheme('dark')} />;
+
+// 2. Resolver — full control per scheme.
+<SmartOTPInput
+  length={6}
+  theme={(scheme) =>
+    createTheme(getOutlinedTheme(scheme), {
+      colors: { borderFocused: scheme === 'dark' ? '#8B5CF6' : '#7C3AED' },
+    })
+  }
+/>;
+
+// 3. Pair — the simple two-theme case.
+<SmartOTPInput
+  length={6}
+  theme={{ light: getMinimalTheme('light'), dark: getMinimalTheme('dark') }}
+/>;
+```
+
+The same three shapes work on `SmartOTPProvider` to theme a whole app. Use
+`resolveTheme(input, scheme)` if you ever need to resolve one yourself.
 
 #### Custom fonts (iOS-safe)
 
@@ -442,7 +515,8 @@ Formik is identical — bind `value` to `values.otp` and `onChange` to
 
 - `OTPCell` — the presentational cell, for fully custom layouts.
 - `getDefaultTheme(scheme)` / `SmartOTPTheme` — theme helpers.
-- `sanitizeOTP` / `toCells` / `extractOTP` — pure utilities.
+- `sanitizeOTP` / `toCells` / `extractOTP` / `stripHoles` — pure utilities.
+- `DEFAULT_LABELS` / `resolveLabels` / `useSmartOTPLabels` / `SmartOTPLabels` — i18n.
 - `isClipboardSupported()` / `defaultClipboardReader` / `ClipboardReader`.
 - `SmartOtp` / `isSmsRetrieverSupported()` / `SmartOtpUnavailableError` — native SMS layer.
 - `getOtpCapabilities()` / `useOtpCapabilities()` / `OtpCapabilities` — runtime support.
@@ -470,6 +544,18 @@ scroll view opts in.** Enable it on your `ScrollView`:
 ```
 
 For non-scrolling screens, wrap the input in `KeyboardAvoidingView` instead.
+
+### Caret on keyboard dismiss
+
+By default the input blurs (and the caret hides) when the software keyboard is
+dismissed, so a field with no keyboard doesn't keep a blinking caret. Set
+`blurOnKeyboardHide={false}` to keep focus across dismissal.
+
+This relies on React Native's `keyboardDidHide` event, so it is a no-op where
+that event doesn't fire: with a hardware keyboard, and on **Android when
+edge-to-edge is enabled** (the RN 0.76+/Android 15 default) — there the IME
+inset change isn't reported as a keyboard event, so the caret persists until the
+user taps away, exactly like a native `TextInput`.
 
 ## Accessibility
 
@@ -512,30 +598,56 @@ subset can be overridden; the rest fall back to the English defaults
 
 ## Quality gates
 
+CI runs every gate on each PR. From the repo root:
+
 ```sh
 npm run typecheck   # tsc --noEmit, strict mode
-npm run lint        # eslint
+npm run lint        # eslint (flat config)
 npm run format      # prettier --check
-npm test            # jest
+npm test            # jest (140 tests)
+npm run build       # react-native-builder-bob (CJS + ESM + d.ts)
+npm run size        # size-limit (core ≤ 5 kB / full ≤ 8 kB brotli)
 ```
+
+The example app's Android Gradle `assembleDebug` is also verified locally and in
+CI against React Native 0.86.
 
 ## Roadmap
 
-| Milestone | Scope |
-| --- | --- |
-| **M1 (done)** | Core `SmartOTPInput`, theming, a11y, autofill props. |
-| **M2 (done)** | `useCountdown` resend timer, clipboard paste hook, form integration. |
-| **M3 (done)** | Android SMS Retriever + User Consent TurboModule (Kotlin) + Expo config plugin. |
-| **M4 (done)** | Capability layer, `useOtpAutofill` unified hook, iOS = no native (oneTimeCode). |
-| **M5 (done)** | Themes (Outlined/Filled/Minimal) + provider, error/success animations, `renderCell`, reduce-motion. |
-| **M6 (done)** | Example app, CI (gates + Gradle), size-limit, semantic-release, governance docs. |
-| M6 | Docs site, example apps (CLI / Expo / React Hook Form), CI/CD. |
+**v1.0 shipped** (M1–M6): core input, Android SMS Retriever + User Consent,
+clipboard + `useOtpAutofill`, themes, animations, example app, CI, size-limit,
+semantic-release.
+
+**v1.1 add-ons (shipped):** tap-to-edit any cell + visible caret · i18n
+(`labels` / `SmartOTPProvider`) · built-in async `onVerify` + loading · fully
+dynamic theming (`resolveTheme`, `themeDefaults`) · keyboard-dismiss blur
+(`blurOnKeyboardHide`) · `onFocus` / `onBlur` for keyboard avoidance.
+
+**Next** (see [ROADMAP.md](ROADMAP.md)): `useOtpController` headless hook,
+`<OtpResendTimer>`, group separators (`groups`), web polish, optional haptics,
+docs site + E2E.
 
 ## Example app
 
-A runnable Expo demo (themes, states, resend timer, unified auto-fill) lives in
-[`example/`](example/). It links the library from source, so edits to `src/` are
-live. See [example/README.md](example/README.md).
+A kitchen-sink Expo demo lives in [`example/`](example/). It links the library
+from source via Metro, so edits to `../src` hot-reload on device.
+
+```sh
+cd example
+npm install
+npm run android   # or: npm run ios — Development Build (required for Android SMS)
+# JS-only: npm run web
+```
+
+The screen exercises all 10 feature areas:
+
+1. Verify (success / error + animations) · 2. Imperative ref API · 3. Masked PIN ·
+4. Alphanumeric · 5. Placeholder + Minimal theme · 6. Theme switcher ·
+7. Live toggles (disabled / error / success / `editableCells`) ·
+8. Resend timer (`useCountdown`) · 9. Custom cells (`renderCell`) ·
+10. Auto-fill + capabilities (`useOtpAutofill`).
+
+See [example/README.md](example/README.md) and [`example/App.tsx`](example/App.tsx).
 
 ## Contributing
 

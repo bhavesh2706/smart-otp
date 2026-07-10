@@ -110,7 +110,14 @@ function clearCell(
     }
   }
   cells[target] = hasFilledAfter ? HOLE : '';
-  return { buffer: build(cells), caret: target };
+  const next = build(cells);
+  // When the last remaining digit is cleared the buffer is empty; park the
+  // caret on the FIRST cell (box 1). The cleared index can be a later box when
+  // the earlier cells are holes (e.g. clearing box 2 while box 1 is a hole), so
+  // returning `target` would strand the caret on box 2 and it could never reach
+  // box 1. While content remains, the caret stays on the cleared cell so the
+  // next keystroke refills it.
+  return { buffer: next, caret: next.length === 0 ? 0 : target };
 }
 
 /** Set the cell at `index` to `char` (overwrite), returning caret after it. */
@@ -128,8 +135,7 @@ function setCell(
 
 /** A controlled text selection, or `undefined` when the OS owns the caret. */
 export type Selection =
-  | { readonly start: number; readonly end: number }
-  | undefined;
+  { readonly start: number; readonly end: number } | undefined;
 
 /**
  * Result of {@link reconcileEdit}: the next buffer and where the caret should
@@ -187,25 +193,37 @@ export function reconcileEdit(
 
   // Single-character deletion (backspace).
   if (delta === -1) {
+    // Clear the cell the caret is *on* — the same cell the render highlights
+    // (`activeIndex = min(sel.start, length - 1)`), so what you see deleted is
+    // the boxed cell. `clearCell` walks left to the nearest filled cell when
+    // that cell is empty or a hole, so the common "type then backspace" flow
+    // (caret sits on the empty next cell) still removes the last filled cell.
+    // Without this, a collapsed caret resting on a *filled* cell (e.g. after
+    // editing box 5 of a full code, the caret advances onto the filled box 6)
+    // would delete the previous cell (`sel.start - 1`), mismatching the caret.
     const target = hasRange
       ? sel.start
       : sel !== undefined
-        ? sel.start - 1
+        ? Math.min(sel.start, length - 1)
         : prev.length - 1;
     return clearCell(prev, target, length);
   }
 
   // Single-character insertion (typing).
   if (delta === 1) {
-    const p = commonPrefix(prev, raw);
-    const char = sanitizeChar(raw[p] ?? '', type);
-    if (char === '') {
-      return { buffer: prev, caret: Math.min(prev.length, length) };
-    }
-    // A tap selected a specific cell to overwrite; otherwise append at the end.
-    const target = hasRange ? sel.start : prev.length;
+    // Insertion index = the controlled caret: a collapsed caret sits *on* the
+    // cell to fill (e.g. a hole left by a middle delete), a tapped range starts
+    // at the cell to overwrite, and with no selection we append at the end. The
+    // native input placed the typed character at that same index, so read it
+    // from `raw[target]`. This lets a mid-string caret refill its own cell
+    // instead of always appending.
+    const target = sel !== undefined ? sel.start : prev.length;
     if (target >= length) {
       return { buffer: prev, caret: length };
+    }
+    const char = sanitizeChar(raw[target] ?? '', type);
+    if (char === '') {
+      return { buffer: prev, caret: Math.min(prev.length, length) };
     }
     return setCell(prev, target, char, length);
   }

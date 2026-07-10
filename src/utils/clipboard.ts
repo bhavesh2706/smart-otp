@@ -36,8 +36,7 @@ function loadClipboardModule(): ClipboardModule | null {
     const moduleName = '@react-native-clipboard/clipboard';
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require(moduleName) as
-      | { default?: ClipboardModule }
-      | ClipboardModule;
+      { default?: ClipboardModule } | ClipboardModule;
     const candidate = 'default' in mod && mod.default ? mod.default : mod;
     cachedModule =
       typeof (candidate as ClipboardModule).getString === 'function'

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { TextStyle, ViewStyle } from 'react-native';
 import { Cursor } from './Cursor';
 import type { SmartOTPTheme } from '../themes/defaultTheme';
+import { themeDefaults } from '../themes/tokens';
 import type { OTPCellState } from '../utils/types';
 
 /**
@@ -136,7 +137,10 @@ const OTPCellComponent = ({
       height: theme.cellSize,
       alignItems: 'center',
       justifyContent: 'center',
-      opacity: state === 'disabled' ? 0.5 : 1,
+      opacity:
+        state === 'disabled'
+          ? (theme.disabledOpacity ?? themeDefaults.disabledOpacity)
+          : 1,
       ...resolveVariantStyle(theme, resolveBorderColor(state, theme)),
     }),
     [state, theme]
@@ -165,6 +169,16 @@ const OTPCellComponent = ({
 
   const display = isEmpty ? (placeholder ?? '') : mask ? maskSymbol : char;
 
+  // Every caret / spacing / scaling value is themeable, falling back to the
+  // shared defaults so a minimal theme still renders correctly.
+  const contentGap = theme.contentGap ?? themeDefaults.contentGap;
+  const cursorColor = theme.colors.cursor ?? theme.colors.borderFocused;
+  const cursorHeight =
+    theme.fontSize *
+    (theme.cursorHeightRatio ?? themeDefaults.cursorHeightRatio);
+  const maxFontMultiplier =
+    theme.maxFontSizeMultiplier ?? themeDefaults.maxFontSizeMultiplier;
+
   return (
     <View
       style={[
@@ -180,12 +194,12 @@ const OTPCellComponent = ({
       accessibilityLabel={accessibilityLabel}
       importantForAccessibility="yes"
     >
-      <View style={styles.content}>
+      <View style={[styles.content, { columnGap: contentGap }]}>
         {!isEmpty || !caret ? (
           <Text
             style={[digitStyle, textStyle]}
             allowFontScaling={allowFontScaling}
-            maxFontSizeMultiplier={1.4}
+            maxFontSizeMultiplier={maxFontMultiplier}
             // Cells must never split a single glyph across lines.
             numberOfLines={1}
             importantForAccessibility="no"
@@ -195,8 +209,16 @@ const OTPCellComponent = ({
         ) : null}
         {caret ? (
           <Cursor
-            color={theme.colors.borderFocused}
-            height={theme.fontSize * 1.1}
+            color={cursorColor}
+            height={cursorHeight}
+            width={theme.cursorWidth ?? themeDefaults.cursorWidth}
+            radius={theme.cursorRadius ?? themeDefaults.cursorRadius}
+            blinkDuration={
+              theme.cursorBlinkDuration ?? themeDefaults.cursorBlinkDuration
+            }
+            blinkDelay={
+              theme.cursorBlinkDelay ?? themeDefaults.cursorBlinkDelay
+            }
             animate={caretAnimate}
           />
         ) : null}
@@ -214,7 +236,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    columnGap: 2,
   },
 });
 

@@ -5,6 +5,9 @@ a resend countdown, and unified auto-fill (`useOtpAutofill`) wiring Android SMS
 + clipboard. It links the library from the parent folder via Metro, so changes
 to `../src` are picked up live.
 
+Android screen recordings (`assets/demo/*.gif`) are shown at the top of the app
+and in the [root README](../README.md#demo).
+
 ## Run
 
 ```sh

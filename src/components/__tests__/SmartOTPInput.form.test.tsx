@@ -40,18 +40,22 @@ function OTPForm({ onSubmit }: { onSubmit: (values: FormValues) => void }) {
 describe('SmartOTPInput + react-hook-form', () => {
   it('binds to a Controller and submits the entered code', async () => {
     const onSubmit = jest.fn();
-    const { getByTestId, getByText } = render(<OTPForm onSubmit={onSubmit} />);
-    fireEvent.changeText(getByTestId(INPUT), '246810');
-    fireEvent.press(getByText('Submit'));
+    const { getByTestId, getByText } = await render(
+      <OTPForm onSubmit={onSubmit} />
+    );
+    await fireEvent.changeText(getByTestId(INPUT), '246810');
+    await fireEvent.press(getByText('Submit'));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit.mock.calls[0]?.[0]).toEqual({ otp: '246810' });
   });
 
   it('blocks submission when the field is incomplete', async () => {
     const onSubmit = jest.fn();
-    const { getByTestId, getByText } = render(<OTPForm onSubmit={onSubmit} />);
-    fireEvent.changeText(getByTestId(INPUT), '24');
-    fireEvent.press(getByText('Submit'));
+    const { getByTestId, getByText } = await render(
+      <OTPForm onSubmit={onSubmit} />
+    );
+    await fireEvent.changeText(getByTestId(INPUT), '24');
+    await fireEvent.press(getByText('Submit'));
     // Give react-hook-form's async validation a chance to run before asserting.
     await waitFor(() => expect(getByTestId(INPUT).props.value).toBe('24'));
     expect(onSubmit).not.toHaveBeenCalled();

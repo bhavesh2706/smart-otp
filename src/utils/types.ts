@@ -30,12 +30,7 @@ export type OTPAutoCompleteType = 'sms-otp' | 'off';
  * accessibility announcements to describe each cell consistently.
  */
 export type OTPCellState =
-  | 'empty'
-  | 'filled'
-  | 'focused'
-  | 'error'
-  | 'success'
-  | 'disabled';
+  'empty' | 'filled' | 'focused' | 'error' | 'success' | 'disabled';
 
 /**
  * Imperative handle exposed by {@link SmartOTPInput} via `ref`.

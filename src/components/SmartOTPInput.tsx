@@ -11,6 +11,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Animated,
+  Keyboard,
   Platform,
   StyleSheet,
   TextInput,
@@ -29,8 +30,10 @@ import { useControllableValue } from '../hooks/useControllableValue';
 import { useMounted } from '../hooks/useMounted';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { useOtpFeedback } from '../animations/useOtpFeedback';
-import { getDefaultTheme } from '../themes/defaultTheme';
-import type { SmartOTPTheme } from '../themes/defaultTheme';
+import { getDefaultTheme, resolveTheme } from '../themes/defaultTheme';
+import type { SmartOTPThemeInput } from '../themes/defaultTheme';
+import { themeDefaults } from '../themes/tokens';
+import type { ColorScheme } from '../themes/tokens';
 import { useSmartOTPLabels, useSmartOTPTheme } from '../themes/ThemeContext';
 import { resolveLabels } from '../utils/labels';
 import type { SmartOTPLabelsInput } from '../utils/labels';
@@ -147,8 +150,12 @@ export interface SmartOTPInputProps {
   readonly keyboardType?: KeyboardTypeOptions;
   /** Allow digit text to scale with OS Dynamic Type. Defaults to `true`. */
   readonly allowFontScaling?: boolean;
-  /** Explicit theme override. Defaults to the built-in light/dark theme. */
-  readonly theme?: SmartOTPTheme;
+  /**
+   * Theme override. Accepts a static theme, a `(scheme) => theme` resolver, or
+   * a `{ light, dark }` pair — the latter two follow the OS color scheme
+   * automatically. Defaults to the built-in light/dark theme.
+   */
+  readonly theme?: SmartOTPThemeInput;
   /** Style for the root row container. */
   readonly containerStyle?: StyleProp<ViewStyle>;
   /** Base style applied to every cell. */
@@ -176,6 +183,21 @@ export interface SmartOTPInputProps {
   readonly onFocus?: () => void;
   /** Called when the input loses focus. */
   readonly onBlur?: () => void;
+  /**
+   * Blur the input (and hide the caret) when the software keyboard is
+   * dismissed. Defaults to `true`. A native `TextInput` keeps focus — and the
+   * caret keeps blinking — after the keyboard is hidden; this releases it so the
+   * field reads as deselected. Set `false` to keep focus across keyboard
+   * dismissal (e.g. when you manage focus yourself).
+   *
+   * Relies on React Native's `keyboardDidHide` event. It has no effect where
+   * that event does not fire: a hardware keyboard (no software show/hide) and,
+   * on **Android with edge-to-edge enabled** (the React Native 0.76+ / Android
+   * 15 default), where the IME-inset change is not reported as a keyboard event.
+   * There, the caret stays until the user taps away — matching a native
+   * `TextInput`.
+   */
+  readonly blurOnKeyboardHide?: boolean;
   /** Accessibility label for the whole input. Defaults to a generated label. */
   readonly accessibilityLabel?: string;
   /**
@@ -258,6 +280,7 @@ const SmartOTPInputComponent = (
     renderCell,
     onFocus,
     onBlur,
+    blurOnKeyboardHide = true,
     accessibilityLabel,
     labels: labelsProp,
     accessibilityHint,
@@ -265,7 +288,6 @@ const SmartOTPInputComponent = (
   } = props;
 
   if (__DEV__ && (!Number.isInteger(length) || length <= 0)) {
-    // eslint-disable-next-line no-console
     console.error(
       `SmartOTPInput: "length" must be a positive integer, received ${String(
         length
@@ -273,17 +295,19 @@ const SmartOTPInputComponent = (
     );
   }
 
-  const scheme = useColorScheme();
+  const scheme: ColorScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const contextTheme = useSmartOTPTheme();
-  // Memoize so the resolved theme keeps a stable identity across renders. The
-  // built-in `getDefaultTheme` returns a fresh object each call, which would
-  // otherwise change the `theme` prop on every keystroke and defeat the
+  // Resolve the dynamic theme input (static theme / `(scheme) => theme` /
+  // `{ light, dark }`) for the active scheme, falling back prop → provider →
+  // built-in. Memoized so the resolved theme keeps a stable identity across
+  // renders: `getDefaultTheme` (and resolvers) return a fresh object each call,
+  // which would otherwise change the `theme` prop every keystroke and defeat the
   // `React.memo` on each `OTPCell`.
   const theme = useMemo(
     () =>
-      themeProp ??
-      contextTheme ??
-      getDefaultTheme(scheme === 'dark' ? 'dark' : 'light'),
+      resolveTheme(themeProp, scheme) ??
+      resolveTheme(contextTheme, scheme) ??
+      getDefaultTheme(scheme),
     [themeProp, contextTheme, scheme]
   );
 
@@ -393,13 +417,14 @@ const SmartOTPInputComponent = (
         if (next === valueRef.current) {
           return;
         }
-        // Park the caret (collapsed) at the END of the content after every edit.
-        // This is the OS-natural cursor position, so it does NOT jam iOS the way
-        // a persistent *range* selection does, and it makes the next backspace
-        // remove the last character — so repeated backspace clears the boxes
-        // one-by-one. A tap sets a transient range (handlePressIn) targeting a
-        // specific cell for the very next keystroke; this collapse resumes after.
-        setSelection({ start: next.length, end: next.length });
+        // Park the caret (collapsed) on the cell the edit acted on: after a
+        // delete it sits on the emptied cell (so the next keystroke refills that
+        // cell, not the end), and after a typed char it advances to the next
+        // cell. `reconcileEdit` computes this index. It is always COLLAPSED (not
+        // a persistent range), which is what avoids the iOS backspace jam; a tap
+        // sets a transient range (handlePressIn) for the very next keystroke and
+        // this collapse resumes after.
+        setSelection({ start: result.caret, end: result.caret });
       } else {
         // Legacy contiguous mode: a plain sanitized string (middle deletes shift).
         next = sanitizeOTP(raw, type, length);
@@ -460,14 +485,35 @@ const SmartOTPInputComponent = (
     [commit]
   );
 
+  // Mirror focus in a ref so the keyboard-hide listener reads the latest value
+  // without re-subscribing on every focus change.
+  const isFocusedRef = useRef(false);
   const handleFocus = useCallback(() => {
+    isFocusedRef.current = true;
     setIsFocused(true);
     onFocusRef.current?.();
   }, []);
   const handleBlur = useCallback(() => {
+    isFocusedRef.current = false;
     setIsFocused(false);
     onBlurRef.current?.();
   }, []);
+
+  // A native TextInput keeps focus when the software keyboard is dismissed, so
+  // the fake caret would keep blinking with no keyboard. Blur on keyboard hide
+  // (opt-out via `blurOnKeyboardHide`) so the field fully deselects. Never fires
+  // with a hardware keyboard (no software keyboard show/hide), so no regression.
+  useEffect(() => {
+    if (!blurOnKeyboardHide) {
+      return;
+    }
+    const sub = Keyboard.addListener('keyboardDidHide', () => {
+      if (isFocusedRef.current) {
+        inputRef.current?.blur();
+      }
+    });
+    return () => sub.remove();
+  }, [blurOnKeyboardHide]);
 
   // Width occupied by one cell including its trailing gap, used to map a tap's
   // x-coordinate to the cell index it landed on.
@@ -540,6 +586,13 @@ const SmartOTPInputComponent = (
     [theme.cellGap]
   );
 
+  // Dim the cell row while verifying — opacity is themeable.
+  const loadingRowStyle = useMemo<ViewStyle>(
+    () => ({ opacity: theme.loadingOpacity ?? themeDefaults.loadingOpacity }),
+    [theme.loadingOpacity]
+  );
+  const spinnerColor = theme.colors.spinner ?? theme.colors.borderFocused;
+
   const derivedKeyboard =
     keyboardType ??
     (type === 'numeric' ? NUMERIC_KEYBOARD : ALPHANUMERIC_KEYBOARD);
@@ -552,6 +605,12 @@ const SmartOTPInputComponent = (
 
   const groupLabel = accessibilityLabel ?? labels.input(length);
   const enteredCount = filledCount(value);
+  // Positional holes are stored as spaces in `value`, so a buffer with holes can
+  // reach `length` characters while cells are still unfilled. Cap the native
+  // input at `length + holeCount` (holes = value.length - enteredCount) so it
+  // still accepts a keystroke to insert a digit into a hole. A hole-free full
+  // code has holeCount 0 → the cap is `length`, blocking over-typing as before.
+  const nativeMaxLength = length + (value.length - enteredCount);
   // Surface verification outcome to screen readers. Paired with a polite live
   // region, Android announces the change; iOS reads it on next focus.
   const stateSuffix = effectiveError
@@ -574,7 +633,7 @@ const SmartOTPInputComponent = (
       accessible={false}
     >
       <View
-        style={[styles.row, effectiveLoading && styles.rowLoading]}
+        style={[styles.row, effectiveLoading && loadingRowStyle]}
         importantForAccessibility="no-hide-descendants"
         accessibilityElementsHidden
       >
@@ -638,7 +697,7 @@ const SmartOTPInputComponent = (
           {renderLoading ? (
             renderLoading()
           ) : (
-            <ActivityIndicator color={theme.colors.borderFocused} />
+            <ActivityIndicator color={spinnerColor} />
           )}
         </View>
       ) : null}
@@ -655,7 +714,7 @@ const SmartOTPInputComponent = (
         autoFocus={autoFocus}
         caretHidden
         keyboardType={derivedKeyboard}
-        maxLength={length}
+        maxLength={nativeMaxLength}
         autoComplete={autoComplete}
         textContentType={textContentType}
         autoCorrect={false}
@@ -710,10 +769,6 @@ const styles = StyleSheet.create({
     // Cells are decorative; never let them capture a tap meant for the input.
     // Set in style (not the deprecated prop) so it is honored on Fabric.
     pointerEvents: 'none',
-  },
-  // Dim the cells while a verification is in flight.
-  rowLoading: {
-    opacity: 0.5,
   },
   // Centered spinner over the cell row during loading.
   loadingOverlay: {

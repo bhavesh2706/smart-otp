@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": false,
+    "types": ["jest", "node"],
 
     "strict": true,
     "noImplicitAny": true,
@@ -25,7 +26,6 @@
     "exactOptionalPropertyTypes": false,
     "noImplicitOverride": true,
 
-    "baseUrl": ".",
     "paths": {
       "react-native-smart-otp": ["./src/index"]
     }

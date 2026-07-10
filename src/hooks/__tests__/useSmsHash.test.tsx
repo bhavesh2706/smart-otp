@@ -15,7 +15,7 @@ describe('useSmsHash', () => {
   });
 
   it('resolves the app hash on mount', async () => {
-    const { result } = renderHook(() => useSmsHash());
+    const { result } = await renderHook(() => useSmsHash());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.hash).toBe('ABCDEFGHIJK');
     expect(result.current.hashes).toEqual(['ABCDEFGHIJK']);
@@ -24,14 +24,14 @@ describe('useSmsHash', () => {
 
   it('surfaces an error without throwing', async () => {
     mock.SmartOtp.getAppHash.mockRejectedValueOnce(new Error('no module'));
-    const { result } = renderHook(() => useSmsHash());
+    const { result } = await renderHook(() => useSmsHash());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.hash).toBeNull();
     expect(result.current.error?.message).toBe('no module');
   });
 
   it('re-computes on refresh', async () => {
-    const { result } = renderHook(() => useSmsHash());
+    const { result } = await renderHook(() => useSmsHash());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(mock.SmartOtp.getAppHash).toHaveBeenCalledTimes(1);
     act(() => result.current.refresh());

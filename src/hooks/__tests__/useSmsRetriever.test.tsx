@@ -15,7 +15,7 @@ describe('useSmsRetriever', () => {
   });
 
   it('reports supported and auto-starts the retriever', async () => {
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useSmsRetriever({ length: 6, onReceived: jest.fn() })
     );
     expect(result.current.isSupported).toBe(true);
@@ -26,11 +26,11 @@ describe('useSmsRetriever', () => {
 
   it('extracts the OTP from a received SMS body', async () => {
     const onReceived = jest.fn();
-    renderHook(() => useSmsRetriever({ length: 6, onReceived }));
+    await renderHook(() => useSmsRetriever({ length: 6, onReceived }));
     await waitFor(() =>
       expect(mock.SmartOtp.addReceivedListener).toHaveBeenCalled()
     );
-    act(() => mock.__fireReceived('Your code is 135790. Do not share.'));
+    await act(() => mock.__fireReceived('Your code is 135790. Do not share.'));
     expect(onReceived).toHaveBeenCalledWith({
       message: 'Your code is 135790. Do not share.',
       otp: '135790',
@@ -38,7 +38,7 @@ describe('useSmsRetriever', () => {
   });
 
   it('uses the user-consent flow when requested', async () => {
-    renderHook(() =>
+    await renderHook(() =>
       useSmsRetriever({
         length: 4,
         onReceived: jest.fn(),
@@ -57,34 +57,34 @@ describe('useSmsRetriever', () => {
   it('forwards timeout and error events', async () => {
     const onTimeout = jest.fn();
     const onError = jest.fn();
-    renderHook(() =>
+    await renderHook(() =>
       useSmsRetriever({ length: 6, onReceived: jest.fn(), onTimeout, onError })
     );
     await waitFor(() =>
       expect(mock.SmartOtp.addTimeoutListener).toHaveBeenCalled()
     );
-    act(() => mock.__fireTimeout());
+    await act(() => mock.__fireTimeout());
     expect(onTimeout).toHaveBeenCalledTimes(1);
-    act(() => mock.__fireError('GMS failure'));
+    await act(() => mock.__fireError('GMS failure'));
     expect(onError).toHaveBeenCalledWith(expect.any(Error));
     expect(onError.mock.calls[0][0].message).toBe('GMS failure');
   });
 
   it('stops and removes listeners on unmount', async () => {
-    const { unmount } = renderHook(() =>
+    const { unmount } = await renderHook(() =>
       useSmsRetriever({ length: 6, onReceived: jest.fn() })
     );
     await waitFor(() =>
       expect(mock.SmartOtp.addReceivedListener).toHaveBeenCalled()
     );
-    unmount();
+    await unmount();
     expect(mock.SmartOtp.stop).toHaveBeenCalled();
   });
 
   it('is inert when unsupported', async () => {
     mock.__setSupported(false);
     const onReceived = jest.fn();
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useSmsRetriever({ length: 6, onReceived })
     );
     expect(result.current.isSupported).toBe(false);

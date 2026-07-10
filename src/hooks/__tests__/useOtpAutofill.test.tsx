@@ -15,7 +15,7 @@ describe('useOtpAutofill', () => {
   });
 
   it('reports capabilities and arms SMS by default', async () => {
-    const { result } = renderHook(() =>
+    const { result } = await renderHook(() =>
       useOtpAutofill({ length: 6, onCode: jest.fn() })
     );
     expect(result.current.capabilities.androidSmsRetriever).toBe(true);
@@ -26,11 +26,11 @@ describe('useOtpAutofill', () => {
 
   it('emits a code extracted from a received SMS', async () => {
     const onCode = jest.fn();
-    renderHook(() => useOtpAutofill({ length: 6, onCode }));
+    await renderHook(() => useOtpAutofill({ length: 6, onCode }));
     await waitFor(() =>
       expect(mock.SmartOtp.addReceivedListener).toHaveBeenCalled()
     );
-    act(() => mock.__fireReceived('Code: 778899'));
+    await act(() => mock.__fireReceived('Code: 778899'));
     expect(onCode).toHaveBeenCalledWith('778899');
   });
 
@@ -39,14 +39,14 @@ describe('useOtpAutofill', () => {
     const getClipboardString = jest
       .fn<Promise<string>, []>()
       .mockResolvedValue('Your code is 112233');
-    renderHook(() =>
+    await renderHook(() =>
       useOtpAutofill({ length: 6, onCode, sms: false, getClipboardString })
     );
     await waitFor(() => expect(onCode).toHaveBeenCalledWith('112233'));
   });
 
   it('does not arm SMS when sms is disabled', async () => {
-    renderHook(() =>
+    await renderHook(() =>
       useOtpAutofill({ length: 6, onCode: jest.fn(), sms: false })
     );
     // Give effects a chance to run.
@@ -57,7 +57,7 @@ describe('useOtpAutofill', () => {
   });
 
   it('honors the user-consent SMS config', async () => {
-    renderHook(() =>
+    await renderHook(() =>
       useOtpAutofill({
         length: 4,
         onCode: jest.fn(),

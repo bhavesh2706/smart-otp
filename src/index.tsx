@@ -75,11 +75,15 @@ export {
   getFilledTheme,
   getMinimalTheme,
   createTheme,
+  resolveTheme,
 } from './themes/defaultTheme';
 export type {
   SmartOTPTheme,
   SmartOTPVariant,
   SmartOTPThemeOverrides,
+  SmartOTPThemeInput,
+  SmartOTPThemeResolver,
+  SmartOTPThemePair,
 } from './themes/defaultTheme';
 export {
   SmartOTPProvider,
@@ -89,7 +93,13 @@ export {
 export type { SmartOTPProviderProps } from './themes/ThemeContext';
 export { DEFAULT_LABELS, resolveLabels } from './utils/labels';
 export type { SmartOTPLabels, SmartOTPLabelsInput } from './utils/labels';
-export { palette, radius, spacing, typography } from './themes/tokens';
+export {
+  palette,
+  radius,
+  spacing,
+  typography,
+  themeDefaults,
+} from './themes/tokens';
 export type { ColorScheme } from './themes/tokens';
 
 export { useReduceMotion } from './hooks/useReduceMotion';

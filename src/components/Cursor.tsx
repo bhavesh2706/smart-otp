@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
+import { themeDefaults } from '../themes/tokens';
 
 /**
  * Props for {@link Cursor}.
@@ -9,6 +10,14 @@ export interface CursorProps {
   readonly color: string;
   /** Caret height in density-independent pixels. */
   readonly height: number;
+  /** Caret width in dp. Defaults to {@link themeDefaults.cursorWidth}. */
+  readonly width?: number;
+  /** Caret corner radius in dp. Defaults to {@link themeDefaults.cursorRadius}. */
+  readonly radius?: number;
+  /** Fade duration per half-blink (ms). Defaults to `450`. */
+  readonly blinkDuration?: number;
+  /** Hold time before fading out (ms). Defaults to `250`. */
+  readonly blinkDelay?: number;
   /**
    * Animate the blink. Pass `false` (e.g. when "Reduce Motion" is on) to render
    * a steady, non-blinking caret.
@@ -27,6 +36,10 @@ export interface CursorProps {
 export function Cursor({
   color,
   height,
+  width = themeDefaults.cursorWidth,
+  radius = themeDefaults.cursorRadius,
+  blinkDuration = themeDefaults.cursorBlinkDuration,
+  blinkDelay = themeDefaults.cursorBlinkDelay,
   animate = true,
 }: CursorProps): React.ReactElement {
   const opacity = useRef(new Animated.Value(1)).current;
@@ -40,29 +53,29 @@ export function Cursor({
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: 0,
-          duration: 450,
-          delay: 250,
+          duration: blinkDuration,
+          delay: blinkDelay,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 1,
-          duration: 450,
+          duration: blinkDuration,
           useNativeDriver: true,
         }),
       ])
     );
     loop.start();
     return () => loop.stop();
-  }, [opacity, animate]);
+  }, [opacity, animate, blinkDuration, blinkDelay]);
 
   return (
     <Animated.View
       style={{
         opacity,
-        width: 2,
+        width,
         height,
         backgroundColor: color,
-        borderRadius: 1,
+        borderRadius: radius,
       }}
       accessibilityElementsHidden
       importantForAccessibility="no"

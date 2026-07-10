@@ -1,10 +1,10 @@
 PODS:
-  - EXConstants (57.0.2):
+  - EXConstants (57.0.3):
     - ExpoModulesCore
   - EXJSONUtils (57.0.0)
   - EXManifests (57.0.0):
     - ExpoModulesCore
-  - Expo (57.0.1):
+  - Expo (57.0.2):
     - ExpoModulesCore
     - ExpoModulesJSI
     - hermes-engine
@@ -30,15 +30,15 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - expo-dev-client (57.0.4):
+  - expo-dev-client (57.0.5):
     - EXManifests
     - expo-dev-launcher
     - expo-dev-menu
     - expo-dev-menu-interface
     - EXUpdatesInterface
-  - expo-dev-launcher (57.0.4):
+  - expo-dev-launcher (57.0.5):
     - EXManifests
-    - expo-dev-launcher/Main (= 57.0.4)
+    - expo-dev-launcher/Main (= 57.0.5)
     - expo-dev-menu
     - expo-dev-menu-interface
     - ExpoModulesCore
@@ -67,7 +67,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - expo-dev-launcher/Main (57.0.4):
+  - expo-dev-launcher/Main (57.0.5):
     - EXManifests
     - expo-dev-launcher/Unsafe
     - expo-dev-menu
@@ -98,7 +98,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - expo-dev-launcher/Unsafe (57.0.4):
+  - expo-dev-launcher/Unsafe (57.0.5):
     - EXManifests
     - expo-dev-menu
     - expo-dev-menu-interface
@@ -128,8 +128,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - expo-dev-menu (57.0.4):
-    - expo-dev-menu/Main (= 57.0.4)
+  - expo-dev-menu (57.0.5):
+    - expo-dev-menu/Main (= 57.0.5)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -152,7 +152,7 @@ PODS:
     - ReactNativeDependencies
     - Yoga
   - expo-dev-menu-interface (57.0.0)
-  - expo-dev-menu/Main (57.0.4):
+  - expo-dev-menu/Main (57.0.5):
     - EXManifests
     - expo-dev-menu-interface
     - ExpoModulesCore
@@ -178,7 +178,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ExpoAsset (57.0.2):
+  - ExpoAsset (57.0.3):
     - ExpoModulesCore
   - ExpoDomWebView (57.0.0):
     - ExpoModulesCore
@@ -190,7 +190,7 @@ PODS:
     - ExpoModulesCore
   - ExpoLogBox (57.0.0):
     - React-Core
-  - ExpoModulesCore (57.0.1):
+  - ExpoModulesCore (57.0.2):
     - ExpoModulesJSI
     - hermes-engine
     - RCTRequired
@@ -217,7 +217,7 @@ PODS:
   - ExpoModulesJSI (57.0.0):
     - React-Core
     - ReactCommon
-  - ExpoModulesWorklets (57.0.1):
+  - ExpoModulesWorklets (57.0.2):
     - ExpoModulesCore
     - ExpoModulesJSI
   - EXUpdatesInterface (57.0.0):
@@ -2359,26 +2359,26 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  EXConstants: ac0976f6962735f39a25730074869614cb1a5d85
+  EXConstants: d069b4a2dd469d5a3a4d3d7b09757e708fda8f64
   EXJSONUtils: 55eca2b6f8fc320cb36933cf45c4f2200a441589
   EXManifests: 66a0e4af8cdb58c0983d462d886136b6d56eee38
-  Expo: 15f5a16e9369278c1781ad3aa17d364245703635
-  expo-dev-client: f4719225c0112b120a71f7a5f3f0899a4b8bb9d5
-  expo-dev-launcher: de8f2f986d2b9d43db447c8da07e57d3458519d5
-  expo-dev-menu: c2bc7829c7c926cc31aec1b9ab64663fc171f050
+  Expo: 20ef75c4eade4e8e95e9be0a181c6df8e5f3e2af
+  expo-dev-client: 3302134f3f8cce7d15f4ab921d2e47aaafd804cb
+  expo-dev-launcher: 3a5012ec6e2fe5488b3ab1c2a44fb2fcde74b02e
+  expo-dev-menu: ec44430d95774d757adc9524fc4a755b8bd8e6c1
   expo-dev-menu-interface: 7a59e803916fbfd1b96c75ff91ea8dddac7e722f
-  ExpoAsset: f9f1fc226653b9f7ab995873d9b4f929d2a916c7
+  ExpoAsset: 586e89aeaab2e23bfa90b9dce4d7d5e36815c039
   ExpoDomWebView: 73ba90107a5acc0017a09b06e66d8eb238e089b8
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae
   ExpoFont: 35fd7ad72f697d3a9656545909972d8b9f60d5da
   ExpoKeepAwake: 8a96e2075b75641001f55393d7e6600a5b808f09
   ExpoLogBox: b39a76aab749833d58111c3be1264bb90f3b92d4
-  ExpoModulesCore: 23ee96e0d4eee71a11465352cb665ae266cb61db
+  ExpoModulesCore: 563bda0e722a4a48e28a8e6cc391a3f51575526f
   ExpoModulesJSI: ef7f197a8e7eeb245557f560ade794bfc1abdc79
-  ExpoModulesWorklets: 10c1c68a4abbae5e279f8ed5f6c6fc5078bbba1e
+  ExpoModulesWorklets: 0340ed9a30017f8597b90a1ef9aa210c43e44c4b
   EXUpdatesInterface: 492cdb30f3889cc35d9e737a4b5fc3aec39d1131
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
-  hermes-engine: 8826e773039fc7fceaaf3b8649d535dae950c41d
+  hermes-engine: 75d070b4a948ed86072f5da7e68533e50fbd15e8
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
   RCTRequired: 30451112e6fef4e6f31b4e7eee0845156e35e4b0
   RCTSwiftUI: 5aaf0b07e747ba749dc6acc94d8bd41eea4b570f

@@ -13,6 +13,7 @@ import {
 import {
   Button,
   Dimensions,
+  Image,
   Keyboard,
   Pressable,
   ScrollView,
@@ -22,6 +23,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import type { StyleProp, TextStyle } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -38,6 +40,18 @@ import {
 } from 'react-native-smart-otp';
 
 const EXPECTED = '123456';
+
+/** Screen recordings from a physical Android device (included in `assets/demo/`). */
+const ANDROID_DEMOS = [
+  {
+    source: require('./assets/demo/android-otp-demo-1.gif'),
+    caption: 'Kitchen-sink overview — scroll through every feature section.',
+  },
+  {
+    source: require('./assets/demo/android-otp-demo-2.gif'),
+    caption: 'Verify flow — wrong code triggers error shake + keyboard.',
+  },
+] as const;
 
 type Scheme = 'light' | 'dark';
 
@@ -90,14 +104,13 @@ function Section({
   caption?: string;
   children: ReactNode;
 }) {
-  const { dark } = useScheme();
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, dark && styles.textDark]}>
-        {title}
-      </Text>
+      <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
       {caption ? (
-        <Text style={[styles.caption, dark && styles.muted]}>{caption}</Text>
+        <ThemedText muted style={styles.caption}>
+          {caption}
+        </ThemedText>
       ) : null}
       <View style={styles.sectionBody}>{children}</View>
     </View>
@@ -107,6 +120,28 @@ function Section({
 /** Muted helper line shown under a demo. */
 function Hint({ children }: { children: ReactNode }) {
   return <Text style={styles.hint}>{children}</Text>;
+}
+
+/**
+ * `Text` that resolves its dark-mode color automatically from the scheme
+ * context. `muted` picks the secondary (grey) tone; otherwise the primary tone.
+ * Consolidates the repeated `[baseStyle, dark && styles.textDark|muted]` idiom.
+ */
+function ThemedText({
+  muted = false,
+  style,
+  children,
+}: {
+  muted?: boolean;
+  style?: StyleProp<TextStyle>;
+  children: ReactNode;
+}) {
+  const { dark } = useScheme();
+  return (
+    <Text style={[style, dark && (muted ? styles.muted : styles.textDark)]}>
+      {children}
+    </Text>
+  );
 }
 
 /** 1. Numeric verify with success / error states + animations. */
@@ -227,7 +262,6 @@ function ThemeDemo() {
 
 /** 7. Live state toggles: disabled / error / success / editableCells. */
 function ToggleDemo() {
-  const { dark } = useScheme();
   const [disabled, setDisabled] = useState(false);
   const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -250,9 +284,7 @@ function ToggleDemo() {
       />
       {toggles.map(([label, val, set]) => (
         <View key={label} style={styles.toggleRow}>
-          <Text style={[styles.toggleLabel, dark && styles.textDark]}>
-            {label}
-          </Text>
+          <ThemedText style={styles.toggleLabel}>{label}</ThemedText>
           <Switch value={val} onValueChange={set} />
         </View>
       ))}
@@ -304,7 +336,6 @@ function RenderCellDemo() {
 
 /** 10. Unified auto-fill + capability readout. */
 function AutofillDemo() {
-  const { dark } = useScheme();
   const [code, setCode] = useState('');
   const { capabilities, checkClipboard } = useOtpAutofill({
     length: 6,
@@ -321,13 +352,13 @@ function AutofillDemo() {
         <Button title="Clear" onPress={() => setCode('')} />
         <Button title="Check clipboard" onPress={checkClipboard} />
       </View>
-      <Text style={[styles.caps, dark && styles.muted]}>
+      <ThemedText muted style={styles.caps}>
         {`platform: ${capabilities.platform}\n` +
           `iOS oneTimeCode: ${capabilities.iosOneTimeCode}\n` +
           `Android SMS retriever: ${capabilities.androidSmsRetriever}\n` +
           `Android SMS user-consent: ${capabilities.androidSmsUserConsent}\n` +
           `clipboard: ${capabilities.clipboard}`}
-      </Text>
+      </ThemedText>
       <Hint>
         Copy a 6-digit code, leave the app and return — it auto-fills.
       </Hint>
@@ -444,12 +475,37 @@ export default function App() {
           keyboardDismissMode="interactive"
         >
           <ScrollIntoViewContext.Provider value={scrollIntoView}>
-            <Text style={[styles.title, dark && styles.textDark]}>
+            <ThemedText style={styles.title}>
               react-native-smart-otp
-            </Text>
-            <Text style={[styles.subtitle, dark && styles.muted]}>
+            </ThemedText>
+            <ThemedText muted style={styles.subtitle}>
               Every feature, one screen. Tap any cell to edit it.
-            </Text>
+            </ThemedText>
+
+            <Section
+              title="Android demos"
+              caption="Recorded on a physical device (New Architecture)."
+            >
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.demoRow}
+              >
+                {ANDROID_DEMOS.map(({ source, caption }) => (
+                  <View key={caption} style={styles.demoCard}>
+                    <Image
+                      source={source}
+                      style={styles.demoGif}
+                      resizeMode="contain"
+                      accessibilityLabel={caption}
+                    />
+                    <ThemedText muted style={styles.demoCaption}>
+                      {caption}
+                    </ThemedText>
+                  </View>
+                ))}
+              </ScrollView>
+            </Section>
 
             {SECTIONS.map(({ title, caption, Component }) => (
               <Section key={title} title={title} caption={caption}>
@@ -521,6 +577,12 @@ const styles = StyleSheet.create({
   customCellText: { fontSize: 20, fontWeight: '700', color: '#11181C' },
 
   caps: { fontFamily: 'monospace', fontSize: 12, color: '#5A6168' },
+
+  demoRow: { gap: 16, paddingVertical: 4 },
+  demoCard: { width: 200 },
+  demoGif: { width: 200, height: 444, borderRadius: 12 },
+  demoCaption: { fontSize: 12, marginTop: 8, lineHeight: 16 },
+
   // Tall footer gives the last sections room to scroll above the keyboard.
   footer: { height: 360 },
 });

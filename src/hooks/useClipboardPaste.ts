@@ -16,7 +16,11 @@ import type { OTPInputType } from '../utils/types';
 export interface UseClipboardPasteOptions {
   /** Exact code length to look for in the clipboard. */
   readonly length: number;
-  /** Called with a detected code (automatic reads dedupe identical codes). */
+  /**
+   * Called with a detected code. Automatic reads (mount / foreground / poll)
+   * are deduplicated against the previous match; an explicit {@link check} call
+   * always fires, even for a repeated code.
+   */
   readonly onDetect: (code: string) => void;
   /** Character set to match. Defaults to `'numeric'`. */
   readonly type?: OTPInputType;
@@ -42,13 +46,12 @@ export interface UseClipboardPasteOptions {
 export interface UseClipboardPasteResult {
   /** `true` when a clipboard reader is available in this runtime. */
   readonly isSupported: boolean;
-  /** Force an immediate clipboard read (e.g. from a "Paste code" button). */
+  /**
+   * Force an immediate clipboard read (e.g. from a "Paste code" button). Unlike
+   * the automatic reads this bypasses dedup and always applies a detected code,
+   * so re-checking after clearing the field re-fills it.
+   */
   readonly check: () => void;
-}
-
-interface ReadClipboardOptions {
-  /** When `false`, re-fire `onDetect` even if the code matches the last detection. */
-  readonly dedupe?: boolean;
 }
 
 /**
@@ -57,9 +60,8 @@ interface ReadClipboardOptions {
  * By default the hook reads the clipboard on mount and each time the app
  * returns to the foreground (the moment a user typically copies a code from
  * their Messages app and switches back). Continuous polling is opt-in via
- * `pollInterval`. Automatic reads (mount, foreground) deduplicate identical
- * codes so the same clipboard value fires `onDetect` only once; manual
- * {@link UseClipboardPasteResult.check} always re-applies a valid code.
+ * `pollInterval`. Detected codes are deduplicated, so the same clipboard value
+ * fires `onDetect` only once.
  *
  * Degrades gracefully: when no clipboard reader is available (the optional
  * `@react-native-clipboard/clipboard` package is not installed and no custom
@@ -90,8 +92,14 @@ export function useClipboardPaste({
   const lastDetectedRef = useRef<string | null>(null);
   const mountedRef = useMounted();
 
-  const readClipboard = useCallback(
-    ({ dedupe = true }: ReadClipboardOptions = {}) => {
+  // `force` bypasses the dedup. Automatic reads (mount / foreground / poll) pass
+  // `false` so the same clipboard value fires `onDetect` only once — this stops
+  // the repeated iOS paste banner and unwanted re-fills. An explicit user action
+  // (the returned `check`, e.g. a "Paste code" button) passes `true`: the user
+  // asked for it, so it must apply even if the code was already detected — and
+  // even after the field was cleared, where the value is unchanged.
+  const runCheck = useCallback(
+    (force: boolean) => {
       if (!enabled || !isSupported) {
         return;
       }
@@ -101,7 +109,7 @@ export function useClipboardPaste({
             return;
           }
           const code = extractOTP(contents, type, length);
-          if (code !== null && (!dedupe || code !== lastDetectedRef.current)) {
+          if (code !== null && (force || code !== lastDetectedRef.current)) {
             lastDetectedRef.current = code;
             onDetectRef.current(code);
           }
@@ -114,29 +122,27 @@ export function useClipboardPaste({
     [enabled, isSupported, reader, type, length, mountedRef]
   );
 
-  const check = useCallback(() => {
-    readClipboard({ dedupe: false });
-  }, [readClipboard]);
+  const check = useCallback(() => runCheck(true), [runCheck]);
 
   useEffect(() => {
     if (!enabled || !isSupported) {
       return;
     }
 
-    readClipboard();
+    runCheck(false);
 
     const subscription = AppState.addEventListener(
       'change',
       (status: AppStateStatus) => {
         if (status === 'active') {
-          readClipboard();
+          runCheck(false);
         }
       }
     );
 
     const intervalId =
       pollInterval && pollInterval > 0
-        ? setInterval(() => readClipboard(), pollInterval)
+        ? setInterval(() => runCheck(false), pollInterval)
         : null;
 
     return () => {
@@ -145,7 +151,7 @@ export function useClipboardPaste({
         clearInterval(intervalId);
       }
     };
-  }, [enabled, isSupported, pollInterval, readClipboard]);
+  }, [enabled, isSupported, pollInterval, runCheck]);
 
   return { isSupported, check };
 }

@@ -59,5 +59,32 @@ export const typography = {
   cellFontWeight: '600',
 } as const;
 
+/**
+ * Fallback values for the optional, fine-grained {@link SmartOTPTheme} tokens.
+ * Every one of these can be overridden on a theme; when a token is omitted the
+ * component reads the matching value here, so a minimal theme stays valid while
+ * a fully-specified theme controls every pixel.
+ */
+export const themeDefaults = {
+  /** Cell opacity while `disabled`. */
+  disabledOpacity: 0.5,
+  /** Cell-row opacity while a verification is loading. */
+  loadingOpacity: 0.5,
+  /** Blinking caret width (dp). */
+  cursorWidth: 2,
+  /** Blinking caret corner radius (dp). */
+  cursorRadius: 1,
+  /** Caret height as a multiple of `fontSize`. */
+  cursorHeightRatio: 1.1,
+  /** Caret fade duration per half-blink (ms). */
+  cursorBlinkDuration: 450,
+  /** Caret hold time before fading out (ms). */
+  cursorBlinkDelay: 250,
+  /** Horizontal gap between a filled digit and its caret (dp). */
+  contentGap: 2,
+  /** Max Dynamic Type scale factor applied to the digit text. */
+  maxFontSizeMultiplier: 1.4,
+} as const;
+
 /** Convenience union of the supported color schemes. */
 export type ColorScheme = keyof typeof palette;

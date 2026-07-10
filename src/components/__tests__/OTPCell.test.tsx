@@ -17,8 +17,8 @@ function flatStyle(node: {
 }
 
 describe('OTPCell', () => {
-  it('renders the character when filled', () => {
-    const { getByText } = render(
+  it('renders the character when filled', async () => {
+    const { getByText } = await render(
       <OTPCell
         char="7"
         state="filled"
@@ -29,8 +29,8 @@ describe('OTPCell', () => {
     expect(getByText('7')).toBeTruthy();
   });
 
-  it('masks the character when mask is enabled', () => {
-    const { getByText, queryByText } = render(
+  it('masks the character when mask is enabled', async () => {
+    const { getByText, queryByText } = await render(
       <OTPCell
         char="7"
         state="filled"
@@ -43,8 +43,8 @@ describe('OTPCell', () => {
     expect(getByText('●')).toBeTruthy();
   });
 
-  it('renders the placeholder when empty', () => {
-    const { getByText } = render(
+  it('renders the placeholder when empty', async () => {
+    const { getByText } = await render(
       <OTPCell
         char=""
         state="empty"
@@ -56,8 +56,8 @@ describe('OTPCell', () => {
     expect(getByText('-')).toBeTruthy();
   });
 
-  it('exposes the accessibility label', () => {
-    const { getByLabelText } = render(
+  it('exposes the accessibility label', async () => {
+    const { getByLabelText } = await render(
       <OTPCell
         char=""
         state="empty"
@@ -68,8 +68,8 @@ describe('OTPCell', () => {
     expect(getByLabelText('Digit 2 of 4, empty')).toBeTruthy();
   });
 
-  it('uses the success border color in the success state', () => {
-    const { getByLabelText } = render(
+  it('uses the success border color in the success state', async () => {
+    const { getByLabelText } = await render(
       <OTPCell
         char="1"
         state="success"
@@ -82,9 +82,9 @@ describe('OTPCell', () => {
     );
   });
 
-  it('applies cellSuccessStyle only in the success state', () => {
+  it('applies cellSuccessStyle only in the success state', async () => {
     const successStyle = { borderColor: '#00FF00' };
-    const { getByLabelText } = render(
+    const { getByLabelText } = await render(
       <OTPCell
         char="1"
         state="success"
@@ -96,8 +96,8 @@ describe('OTPCell', () => {
     expect(flatStyle(getByLabelText('cell')).borderColor).toBe('#00FF00');
   });
 
-  it('shows a caret instead of the placeholder in an empty active cell', () => {
-    const { queryByText } = render(
+  it('shows a caret instead of the placeholder in an empty active cell', async () => {
+    const { queryByText } = await render(
       <OTPCell
         char=""
         state="focused"
@@ -112,8 +112,8 @@ describe('OTPCell', () => {
     expect(queryByText('-')).toBeNull();
   });
 
-  it('keeps the digit visible alongside the caret in a filled active cell', () => {
-    const { getByText } = render(
+  it('keeps the digit visible alongside the caret in a filled active cell', async () => {
+    const { getByText } = await render(
       <OTPCell
         char="7"
         state="focused"
@@ -126,12 +126,12 @@ describe('OTPCell', () => {
     expect(getByText('7')).toBeTruthy();
   });
 
-  it('applies a custom fontFamily and omits fontWeight when unset', () => {
+  it('applies a custom fontFamily and omits fontWeight when unset', async () => {
     const customFont = createTheme(getDefaultTheme('light'), {
       fontFamily: 'Inter-SemiBold',
       fontWeight: undefined,
     });
-    const { getByText } = render(
+    const { getByText } = await render(
       <OTPCell
         char="5"
         state="filled"
@@ -144,9 +144,9 @@ describe('OTPCell', () => {
     expect(style.fontWeight).toBeUndefined();
   });
 
-  it('renders the underline variant with only a bottom border', () => {
+  it('renders the underline variant with only a bottom border', async () => {
     const minimal = getMinimalTheme('light');
-    const { getByLabelText } = render(
+    const { getByLabelText } = await render(
       <OTPCell
         char="1"
         state="filled"

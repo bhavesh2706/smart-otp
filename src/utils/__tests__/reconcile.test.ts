@@ -54,6 +54,27 @@ describe('reconcileEdit — sequential backspace (caret at end)', () => {
     expect(edit('1 3', '1 ', caret(3))).toBe('1');
     expect(edit('1', '', caret(1))).toBe('');
   });
+
+  it('backspace clears the boxed cell (caret on a filled cell), not the previous', () => {
+    // Complete code, caret collapsed ON box 6 (index 5) — e.g. after editing an
+    // earlier box the caret advances onto the filled last box. Backspace must
+    // clear box 6 (the highlighted cell), leaving box 5 intact.
+    expect(edit('111125', '11112', caret(5))).toBe('11112');
+    // Sanity: the same edit with the caret past the end also clears box 6.
+    expect(edit('111125', '11112', caret(6))).toBe('11112');
+  });
+
+  it('clearing the last digit puts the caret on box 1 even behind a hole', () => {
+    // Buffer " 5" = box 1 hole, box 2 filled. Backspacing box 2 empties the
+    // buffer; the caret must land on box 1 (index 0), not stay on box 2.
+    const r = reconcileEdit(' 5', ' ', 6, 'numeric', caret(2));
+    expect(r.buffer).toBe('');
+    expect(r.caret).toBe(0);
+    // Same for a deeper leading-hole run: "  8" (boxes 1-2 holes, box 3 filled).
+    const r2 = reconcileEdit('  8', '  ', 6, 'numeric', caret(3));
+    expect(r2.buffer).toBe('');
+    expect(r2.caret).toBe(0);
+  });
 });
 
 describe('reconcileEdit — typing & paste', () => {
@@ -63,6 +84,22 @@ describe('reconcileEdit — typing & paste', () => {
 
   it('ignores invalid characters', () => {
     expect(edit('12', '12a', caret(2))).toBe('12');
+  });
+
+  it('refills a hole in place when the caret sits on it', () => {
+    // Caret collapsed ON the hole (index 1); native inserts the digit there.
+    expect(edit('5 8888', '57 8888', caret(1))).toBe('578888');
+  });
+
+  it('reports the caret on the edited cell (delete → that cell, type → next)', () => {
+    // Delete box 2 of a tapped range → caret on the emptied box 2 (index 1).
+    expect(reconcileEdit('528888', '52888', 6, 'numeric', tap(1)).caret).toBe(
+      1
+    );
+    // Then typing there advances the caret to box 3 (index 2).
+    expect(
+      reconcileEdit('5 8888', '57 8888', 6, 'numeric', caret(1)).caret
+    ).toBe(2);
   });
 
   it('fills compactly from a multi-char paste', () => {

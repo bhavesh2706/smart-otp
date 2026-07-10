@@ -3,14 +3,14 @@
     "name": "SmartOTPInput (core component)",
     "path": "lib/module/index.js",
     "import": "{ SmartOTPInput }",
-    "limit": "4 KB",
+    "limit": "5 KB",
     "ignore": ["react", "react-native"]
   },
   {
     "name": "Full public API",
     "path": "lib/module/index.js",
     "import": "*",
-    "limit": "7 KB",
+    "limit": "8 KB",
     "ignore": ["react", "react-native"]
   }
 ]
