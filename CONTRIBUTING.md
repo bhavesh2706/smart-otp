@@ -11,27 +11,51 @@ cd react-native-smart-otp
 npm install
 ```
 
-Run the example app (Expo, works for CLI and Expo consumers):
+### Example app
+
+The kitchen-sink demo in [`example/`](example/) links the library from `../src`
+via Metro, so library edits hot-reload without rebuilding the native app.
 
 ```sh
 cd example
 npm install
-npm run start    # then press a (Android) or i (iOS)
+
+# Full feature set (Android SMS Retriever, clipboard, New Architecture):
+npm run android   # or: npm run ios
+
+# JS-only (themes, timer, iOS oneTimeCode) — Expo Go / web:
+npm run start     # dev client, if already installed
+npm run web
 ```
+
+> **Android SMS** needs a **Development Build** (`expo run:android`), not Expo
+> Go. Unsupported native capabilities degrade gracefully everywhere else.
+>
+> Connect a device or emulator (`adb devices`). After the first native build,
+> `npm run start` in `example/` is enough for JS-only changes. Re-run
+> `npm run android` / `ios` when native code or Expo config changes.
+
+See [example/README.md](example/README.md) for what the demo covers.
 
 ## Quality gates
 
-Every change must pass all gates before review. They mirror CI:
+Every change must pass all gates before review. They mirror CI — run from the
+**repo root**:
 
 ```sh
 npm run typecheck   # tsc --noEmit, strict mode
-npm run lint        # eslint
+npm run lint        # eslint (flat config: eslint.config.mjs)
 npm run format      # prettier --check
 npm test            # jest
-npm run build       # react-native-builder-bob
+npm run build       # react-native-builder-bob (CJS + ESM + d.ts)
+npm run size        # size-limit (core ≤ 5 kB / full ≤ 8 kB brotli)
 ```
 
-`npm run lint -- --fix` and `npx prettier --write` auto-fix most issues.
+`npm run lint -- --fix` and `npx prettier --write "src/**/*.{ts,tsx}"` auto-fix
+most issues.
+
+For native or example changes, also verify the example app builds and runs on a
+device or emulator (`cd example && npm run android`).
 
 ## Coding standards
 
@@ -42,14 +66,17 @@ npm run build       # react-native-builder-bob
 - Native code stays isolated; the JS surface must degrade gracefully when a
   native module is absent.
 - Every exported API needs a JSDoc comment.
-- No new runtime dependencies without discussion. Optional native modules are
-  optional peer dependencies, dynamically required.
+- No new **required** runtime dependencies without discussion. Optional native
+  modules are optional peer dependencies, dynamically required.
+- Additive, backward-compatible props and APIs — no breaking changes without a
+  major release.
 
 ## Tests
 
 - Co-locate tests in `__tests__` next to the code.
-- Unit-test pure logic; component-test UI with React Native Testing Library;
-  mock native modules (see `src/native/__mocks__`).
+- Unit-test pure logic; component-test UI with React Native Testing Library
+  (async `render` / `fireEvent` — await them).
+- Mock native modules (see `src/native/__mocks__`).
 - New features and bug fixes require tests.
 
 ## Commits & releases
@@ -62,17 +89,29 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 - `feat!:` / `BREAKING CHANGE:` → major
 
 Examples: `feat(themes): add high-contrast variant`, `fix(sms): unregister
-receiver on consent denial`.
+receiver on consent denial`, `docs: refresh README with Android demos`.
 
 ## Pull requests
 
 1. Branch from `main`.
 2. Keep PRs focused; describe the motivation and any trade-offs.
-3. Ensure all gates pass and docs (README/CHANGELOG) are updated.
+3. Ensure all gates pass and docs ([README](README.md) / [CHANGELOG](CHANGELOG.md))
+   are updated when user-facing behavior changes.
 4. Link any related issue.
 
 ## Architecture notes
 
-The library favours composition over configuration. Key decisions (single
-hidden `TextInput`, JS-side OTP extraction, iOS-needs-no-native) are documented
-in the README and `ROADMAP.md` — read those before large changes.
+The library favours composition over configuration. Key decisions (single hidden
+`TextInput`, JS-side OTP extraction, iOS-needs-no-native, graceful degradation)
+are documented in the [README](README.md). Read that and recent
+[CHANGELOG](CHANGELOG.md) entries before large changes.
+
+Repository layout:
+
+```
+src/            library source (components, hooks, native bridge, themes, utils)
+android/        Kotlin TurboModule (SMS Retriever + User Consent)
+example/        Expo kitchen-sink demo (links ../src via Metro)
+docs/           README assets (e.g. demo GIFs)
+app.plugin.js   Expo config plugin
+```
