@@ -1,39 +1,43 @@
 # react-native-smart-otp
 
+[![npm version](https://img.shields.io/npm/v/react-native-smart-otp.svg)](https://www.npmjs.com/package/react-native-smart-otp)
 [![CI](https://github.com/bhavesh2706/smart-otp/actions/workflows/ci.yml/badge.svg)](https://github.com/bhavesh2706/smart-otp/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/react-native-smart-otp.svg)](https://www.npmjs.com/package/react-native-smart-otp)
 [![bundle](https://img.shields.io/badge/core-4.9kB%20brotli-success)](.size-limit.json)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Enterprise-grade OTP / PIN input for **React Native** and **Expo**, with platform
-autofill, first-class accessibility, theming, dark mode, RTL and the New
-Architecture (Fabric / TurboModules). Zero runtime dependencies; ~4.9 kB core
-(~6.9 kB full public API, brotli).
+Production-ready **OTP / PIN input** for React Native and Expo — platform **autofill**, **theming**, **accessibility**, dark mode, RTL, and the New Architecture. **Zero runtime dependencies.** TypeScript-first.
 
-## Demo
+**[npm](https://www.npmjs.com/package/react-native-smart-otp) · [GitHub](https://github.com/bhavesh2706/smart-otp) · [Issues](https://github.com/bhavesh2706/smart-otp/issues) · [Interactive demo](example/README.md) · [Full video demo](https://www.youtube.com/shorts/lDG87x_tpe8)**
 
-Screen recordings from the [example app](example/) (New Architecture):
+## Preview
 
-### Android (physical device)
+Highlights from the kitchen-sink demo on **Android** (physical device) and **iOS** (simulator), New Architecture:
+
+### Android
 
 | Kitchen-sink overview | Verify flow (error shake) |
-| --- | --- |
-| ![Android kitchen-sink overview](docs/demo/android-otp-demo-1.gif) | ![Android verify flow with error shake](docs/demo/android-otp-demo-2.gif) |
+|:---:|:---:|
+| ![Android kitchen-sink overview](https://raw.githubusercontent.com/bhavesh2706/smart-otp/main/docs/demo/android-otp-demo-1.gif) | ![Android verify flow with error shake](https://raw.githubusercontent.com/bhavesh2706/smart-otp/main/docs/demo/android-otp-demo-2.gif) |
 
-### iOS (simulator)
+### iOS
 
 | Kitchen-sink overview | Verify success |
-| --- | --- |
-| ![iOS kitchen-sink overview](docs/demo/ios-otp-demo-1.gif) | ![iOS verify success](docs/demo/ios-otp-demo-2.gif) |
+|:---:|:---:|
+| ![iOS kitchen-sink overview](https://raw.githubusercontent.com/bhavesh2706/smart-otp/main/docs/demo/ios-otp-demo-1.gif) | ![iOS verify success](https://raw.githubusercontent.com/bhavesh2706/smart-otp/main/docs/demo/ios-otp-demo-2.gif) |
 
-## Why
+**[Watch the full demo on YouTube](https://www.youtube.com/shorts/lDG87x_tpe8)** — walkthrough of the example app on device and simulator.
 
-Existing OTP libraries trade off between features, accessibility and autofill.
-`react-native-smart-otp` uses a **single hidden `TextInput` behind visual
-cells**, so iOS `oneTimeCode` and Android `sms-otp` autofill fill every cell
-atomically while screen readers focus one real, labelled field.
+## Features
 
-## Installation
+- **Architecture** — one hidden `TextInput` behind visual cells so iOS `oneTimeCode` and Android `sms-otp` autofill every cell atomically; screen readers focus a single labelled field.
+- **SmartOTPInput** — controlled / uncontrolled, masking, numeric & alphanumeric, tap-to-edit any cell, visible caret.
+- **Autofill** — iOS `oneTimeCode`; Android SMS Retriever + User Consent (Kotlin TurboModule); clipboard; unified `useOtpAutofill`.
+- **UX** — three themes + provider, error shake / success pop, async `onVerify` + loading, custom `renderCell`, reduce-motion aware.
+- **Hooks** — `useCountdown`, `useClipboardPaste`, `useSmsRetriever`, `useSmsHash`, `useOtpCapabilities`.
+- **Forms & a11y** — React Hook Form ready; i18n labels; Dynamic Type; RTL.
+- **Scale** — 140 tests · MIT · **~95 kB** packed · **~4.9 kB** core brotli · example app with **10 feature sections**.
+
+## Install
 
 ```sh
 npm install react-native-smart-otp
@@ -41,8 +45,26 @@ npm install react-native-smart-otp
 yarn add react-native-smart-otp
 ```
 
-`react` and `react-native` are peer dependencies. No other **required** runtime
-dependencies.
+Peer deps: `react`, `react-native`. Optional: `@react-native-clipboard/clipboard` for clipboard autofill. **MIT license** · **140 tests** · **~95 kB** packed · **zero required runtime dependencies**.
+
+### Interactive demo (10 sections)
+
+The repo includes **[example/](example/README.md)** — one kitchen-sink screen, ten feature areas:
+
+| # | Section |
+|---:|---|
+| 1 | Verify (success / error + animations) |
+| 2 | Imperative ref API |
+| 3 | Masked PIN |
+| 4 | Alphanumeric input |
+| 5 | Placeholder + Minimal theme |
+| 6 | Theme switcher |
+| 7 | Live toggles (`disabled` / `error` / `success` / `editableCells`) |
+| 8 | Resend timer (`useCountdown`) |
+| 9 | Custom cells (`renderCell`) |
+| 10 | Auto-fill + capabilities (`useOtpAutofill`) |
+
+Run locally from `example/`, or watch the **[full video on YouTube](https://www.youtube.com/shorts/lDG87x_tpe8)**.
 
 | Consumer | Setup |
 | --- | --- |
@@ -61,9 +83,10 @@ degrades when native modules are absent.
 ## Quick start
 
 ```tsx
+import React from 'react';
 import { SmartOTPInput } from 'react-native-smart-otp';
 
-export function VerifyScreen() {
+function VerifyScreen() {
   return (
     <SmartOTPInput length={6} autoFocus onComplete={(code) => verify(code)} />
   );
@@ -88,13 +111,50 @@ ref.current?.clear();
 ref.current?.setValue('123456');
 ```
 
-## API
+## Recipes
+
+### Async verify (built-in loading → success / error)
+
+```tsx
+<SmartOTPInput
+  length={6}
+  onVerify={async (code) => (await api.verifyOtp(code)).ok}
+  onError={(e) => console.warn(e)}
+/>
+```
+
+### Unified autofill (SMS + clipboard)
+
+```tsx
+const [code, setCode] = useState('');
+useOtpAutofill({ length: 6, onCode: setCode });
+
+<SmartOTPInput length={6} value={code} onChange={setCode} autoFocus />;
+```
+
+### Themed + dark mode
+
+```tsx
+import { SmartOTPInput, getFilledTheme } from 'react-native-smart-otp';
+
+<SmartOTPInput
+  length={6}
+  theme={{ light: getFilledTheme('light'), dark: getFilledTheme('dark') }}
+/>;
+```
+
+> Android SMS Retriever needs a **development build** (`expo run:android`). Clipboard needs the optional `@react-native-clipboard/clipboard` peer.
+
+## Full prop reference
+
+Every prop on `<SmartOTPInput />`, grouped. Optional unless marked **required**. See the
+[example app](example/README.md) for **10** runnable feature sections.
 
 ### `<SmartOTPInput />`
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `length` | `number` | — (required) | Number of cells / expected code length. |
+| Prop | Type | Default | Notes |
+|------|------|---------|-------|
+| `length` | `number` | — | **required.** Number of cells / expected code length. |
 | `value` | `string` | — | Controlled value. Pair with `onChange`. |
 | `defaultValue` | `string` | `''` | Initial value (uncontrolled only). |
 | `onChange` | `(code: string) => void` | — | Fires on every sanitized change. |
@@ -636,31 +696,17 @@ docs site + E2E.
 
 ## Example app
 
-A kitchen-sink Expo demo lives in [`example/`](example/). It links the library
-from source via Metro, so edits to `../src` hot-reload on device. Platform demo
-GIFs are shown at the top of the screen and in the [Demo](#demo) section above.
+Same **[10-section demo](example/README.md)** as above — run from `example/`:
 
 ```sh
-cd example
-npm install
-npm run android   # physical device or emulator (Android SMS needs dev build)
-npm run ios       # iPhone 17 Pro simulator by default
-# JS-only: npm run web
+cd example && npm install
+npm run android   # device or emulator
+npm run ios       # iPhone 17 Pro simulator (default)
 ```
 
-> **iOS note:** `example/ios/Podfile` embeds `ExpoModulesJSI.framework` via a
-> `post_install` hook (required on Expo SDK 57). See
-> [CONTRIBUTING.md](CONTRIBUTING.md) if the dev client crashes at launch.
+> **iOS:** `example/ios/Podfile` embeds `ExpoModulesJSI.framework` (Expo SDK 57). See [CONTRIBUTING.md](CONTRIBUTING.md) if the dev client crashes at launch.
 
-The screen exercises all 10 feature areas:
-
-1. Verify (success / error + animations) · 2. Imperative ref API · 3. Masked PIN ·
-4. Alphanumeric · 5. Placeholder + Minimal theme · 6. Theme switcher ·
-7. Live toggles (disabled / error / success / `editableCells`) ·
-8. Resend timer (`useCountdown`) · 9. Custom cells (`renderCell`) ·
-10. Auto-fill + capabilities (`useOtpAutofill`).
-
-See [example/README.md](example/README.md) and [`example/App.tsx`](example/App.tsx).
+Source: [`example/App.tsx`](example/App.tsx) · Video: **[YouTube demo](https://www.youtube.com/shorts/lDG87x_tpe8)**
 
 ## Contributing
 
@@ -674,4 +720,4 @@ Repository: [github.com/bhavesh2706/smart-otp](https://github.com/bhavesh2706/sm
 
 ## License
 
-[MIT](LICENSE) © react-native-smart-otp contributors
+MIT · [Bhavesh Barot](https://github.com/bhavesh2706) · [npm](https://www.npmjs.com/package/react-native-smart-otp)

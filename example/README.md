@@ -6,7 +6,8 @@ a resend countdown, and unified auto-fill (`useOtpAutofill`) wiring Android SMS
 to `../src` are picked up live.
 
 Platform screen recordings (`assets/demo/*.gif`) — Android and iOS — are shown at
-the top of the app and in the [root README](../README.md#demo).
+the top of the app, in the [root README](../README.md#preview), and in the
+[YouTube demo](https://www.youtube.com/shorts/lDG87x_tpe8).
 
 ## Run
 
