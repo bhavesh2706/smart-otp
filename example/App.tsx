@@ -41,7 +41,7 @@ import {
 
 const EXPECTED = '123456';
 
-/** Screen recordings from a physical Android device (included in `assets/demo/`). */
+/** Screen recordings bundled under `assets/demo/` for the gallery at the top. */
 const ANDROID_DEMOS = [
   {
     source: require('./assets/demo/android-otp-demo-1.gif'),
@@ -52,6 +52,46 @@ const ANDROID_DEMOS = [
     caption: 'Verify flow — wrong code triggers error shake + keyboard.',
   },
 ] as const;
+
+const IOS_DEMOS = [
+  {
+    source: require('./assets/demo/ios-otp-demo-1.gif'),
+    caption: 'Kitchen-sink overview — all feature sections on one screen.',
+  },
+  {
+    source: require('./assets/demo/ios-otp-demo-2.gif'),
+    caption: 'Verify success — correct code turns cells green + keyboard.',
+  },
+] as const;
+
+/** Horizontal scroller for platform demo GIFs. */
+function DemoGallery({
+  demos,
+}: {
+  demos: ReadonlyArray<{ source: number; caption: string }>;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.demoRow}
+    >
+      {demos.map(({ source, caption }) => (
+        <View key={caption} style={styles.demoCard}>
+          <Image
+            source={source}
+            style={styles.demoGif}
+            resizeMode="contain"
+            accessibilityLabel={caption}
+          />
+          <ThemedText muted style={styles.demoCaption}>
+            {caption}
+          </ThemedText>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
 
 type Scheme = 'light' | 'dark';
 
@@ -486,25 +526,14 @@ export default function App() {
               title="Android demos"
               caption="Recorded on a physical device (New Architecture)."
             >
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.demoRow}
-              >
-                {ANDROID_DEMOS.map(({ source, caption }) => (
-                  <View key={caption} style={styles.demoCard}>
-                    <Image
-                      source={source}
-                      style={styles.demoGif}
-                      resizeMode="contain"
-                      accessibilityLabel={caption}
-                    />
-                    <ThemedText muted style={styles.demoCaption}>
-                      {caption}
-                    </ThemedText>
-                  </View>
-                ))}
-              </ScrollView>
+              <DemoGallery demos={ANDROID_DEMOS} />
+            </Section>
+
+            <Section
+              title="iOS demos"
+              caption="Recorded on iPhone simulator (New Architecture)."
+            >
+              <DemoGallery demos={IOS_DEMOS} />
             </Section>
 
             {SECTIONS.map(({ title, caption, Component }) => (

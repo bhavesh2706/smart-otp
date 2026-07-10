@@ -5,22 +5,24 @@ a resend countdown, and unified auto-fill (`useOtpAutofill`) wiring Android SMS
 + clipboard. It links the library from the parent folder via Metro, so changes
 to `../src` are picked up live.
 
-Android screen recordings (`assets/demo/*.gif`) are shown at the top of the app
-and in the [root README](../README.md#demo).
+Platform screen recordings (`assets/demo/*.gif`) — Android and iOS — are shown at
+the top of the app and in the [root README](../README.md#demo).
 
 ## Run
 
 ```sh
 npm install
-# A development build is required for the native Android SMS module:
-npm run android   # or: npm run ios
+# Development build (full native features):
+npm run android   # physical device or emulator
+npm run ios       # iPhone 17 Pro simulator (default)
 # JS-only features also run in Expo Go / web:
 npm run web
 ```
 
-> The Android SMS Retriever module needs a **Development Build** (`expo run:android`),
-> not Expo Go. All other features (UI, themes, clipboard, iOS oneTimeCode,
-> timer) work everywhere; unsupported capabilities degrade gracefully.
+> **Android SMS** needs `expo run:android`, not Expo Go. **iOS** needs
+> `expo run:ios` for the dev client; see [CONTRIBUTING.md](../CONTRIBUTING.md)
+> if the app crashes at launch (ExpoModulesJSI embed). All other features
+> degrade gracefully.
 
 ## What it shows
 

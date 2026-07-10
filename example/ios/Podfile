@@ -63,5 +63,23 @@ target 'SmartOTPExample' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # Expo SDK 57: ExpoModulesJSI is linked dynamically but omitted from the
+    # CocoaPods embed script — the app crashes at launch without it.
+    frameworks_sh = File.join(
+      installer.sandbox.root,
+      'Target Support Files/Pods-SmartOTPExample/Pods-SmartOTPExample-frameworks.sh'
+    )
+    if File.exist?(frameworks_sh)
+      embed = 'install_framework "${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesJSI/ExpoModulesJSI.framework"'
+      content = File.read(frameworks_sh)
+      unless content.include?(embed)
+        content = content.gsub(
+          'install_framework "${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesCore/ExpoModulesCore.framework"',
+          "install_framework \"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesCore/ExpoModulesCore.framework\"\n  #{embed}"
+        )
+        File.write(frameworks_sh, content)
+      end
+    end
   end
 end

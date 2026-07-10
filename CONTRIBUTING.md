@@ -6,8 +6,8 @@ workflow, standards and tooling.
 ## Development setup
 
 ```sh
-git clone https://github.com/seaculum/react-native-smart-otp.git
-cd react-native-smart-otp
+git clone https://github.com/bhavesh2706/smart-otp.git
+cd smart-otp
 npm install
 ```
 
@@ -21,7 +21,8 @@ cd example
 npm install
 
 # Full feature set (Android SMS Retriever, clipboard, New Architecture):
-npm run android   # or: npm run ios
+npm run android   # physical device or emulator
+npm run ios       # iPhone 17 Pro simulator (default)
 
 # JS-only (themes, timer, iOS oneTimeCode) — Expo Go / web:
 npm run start     # dev client, if already installed
@@ -31,9 +32,15 @@ npm run web
 > **Android SMS** needs a **Development Build** (`expo run:android`), not Expo
 > Go. Unsupported native capabilities degrade gracefully everywhere else.
 >
-> Connect a device or emulator (`adb devices`). After the first native build,
-> `npm run start` in `example/` is enough for JS-only changes. Re-run
-> `npm run android` / `ios` when native code or Expo config changes.
+> **iOS (Expo SDK 57):** the example `Podfile` includes a `post_install` hook
+> that embeds `ExpoModulesJSI.framework` — without it the dev client crashes at
+> launch. After changing native deps, run `cd ios && pod install` then
+> `npm run ios`.
+>
+> Connect a device or emulator (`adb devices` / Xcode Simulator). After the
+> first native build, `npm run start` in `example/` is enough for JS-only
+> changes. Re-run `npm run android` / `ios` when native code or Expo config
+> changes.
 
 See [example/README.md](example/README.md) for what the demo covers.
 
@@ -54,8 +61,12 @@ npm run size        # size-limit (core ≤ 5 kB / full ≤ 8 kB brotli)
 `npm run lint -- --fix` and `npx prettier --write "src/**/*.{ts,tsx}"` auto-fix
 most issues.
 
-For native or example changes, also verify the example app builds and runs on a
-device or emulator (`cd example && npm run android`).
+For native or example changes, verify the example app on **both** platforms:
+
+```sh
+cd example && npm run android   # device or emulator
+cd example && npm run ios       # simulator
+```
 
 ## Coding standards
 
@@ -89,7 +100,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 - `feat!:` / `BREAKING CHANGE:` → major
 
 Examples: `feat(themes): add high-contrast variant`, `fix(sms): unregister
-receiver on consent denial`, `docs: refresh README with Android demos`.
+receiver on consent denial`, `docs: add iOS demo GIFs and refresh README`.
 
 ## Pull requests
 
@@ -112,6 +123,7 @@ Repository layout:
 src/            library source (components, hooks, native bridge, themes, utils)
 android/        Kotlin TurboModule (SMS Retriever + User Consent)
 example/        Expo kitchen-sink demo (links ../src via Metro)
-docs/           README assets (e.g. demo GIFs)
+docs/           README assets (Android + iOS demo GIFs)
+example/ios/    Expo prebuild output (Podfile embed fix for ExpoModulesJSI)
 app.plugin.js   Expo config plugin
 ```

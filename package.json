@@ -62,7 +62,7 @@
   "author": "react-native-smart-otp contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/seaculum/react-native-smart-otp.git"
+    "url": "https://github.com/bhavesh2706/smart-otp.git"
   },
   "peerDependencies": {
     "@react-native-clipboard/clipboard": "*",

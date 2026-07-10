@@ -1,6 +1,6 @@
 # react-native-smart-otp
 
-[![CI](https://github.com/seaculum/react-native-smart-otp/actions/workflows/ci.yml/badge.svg)](https://github.com/seaculum/react-native-smart-otp/actions/workflows/ci.yml)
+[![CI](https://github.com/bhavesh2706/smart-otp/actions/workflows/ci.yml/badge.svg)](https://github.com/bhavesh2706/smart-otp/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/react-native-smart-otp.svg)](https://www.npmjs.com/package/react-native-smart-otp)
 [![bundle](https://img.shields.io/badge/core-4.9kB%20brotli-success)](.size-limit.json)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -12,12 +12,19 @@ Architecture (Fabric / TurboModules). Zero runtime dependencies; ~4.9 kB core
 
 ## Demo
 
-Android screen recordings from the [example app](example/) on a physical device
-(New Architecture):
+Screen recordings from the [example app](example/) (New Architecture):
+
+### Android (physical device)
 
 | Kitchen-sink overview | Verify flow (error shake) |
 | --- | --- |
-| ![Kitchen-sink overview](docs/demo/android-otp-demo-1.gif) | ![Verify flow with error shake](docs/demo/android-otp-demo-2.gif) |
+| ![Android kitchen-sink overview](docs/demo/android-otp-demo-1.gif) | ![Android verify flow with error shake](docs/demo/android-otp-demo-2.gif) |
+
+### iOS (simulator)
+
+| Kitchen-sink overview | Verify success |
+| --- | --- |
+| ![iOS kitchen-sink overview](docs/demo/ios-otp-demo-1.gif) | ![iOS verify success](docs/demo/ios-otp-demo-2.gif) |
 
 ## Why
 
@@ -630,14 +637,20 @@ docs site + E2E.
 ## Example app
 
 A kitchen-sink Expo demo lives in [`example/`](example/). It links the library
-from source via Metro, so edits to `../src` hot-reload on device.
+from source via Metro, so edits to `../src` hot-reload on device. Platform demo
+GIFs are shown at the top of the screen and in the [Demo](#demo) section above.
 
 ```sh
 cd example
 npm install
-npm run android   # or: npm run ios — Development Build (required for Android SMS)
+npm run android   # physical device or emulator (Android SMS needs dev build)
+npm run ios       # iPhone 17 Pro simulator by default
 # JS-only: npm run web
 ```
+
+> **iOS note:** `example/ios/Podfile` embeds `ExpoModulesJSI.framework` via a
+> `post_install` hook (required on Expo SDK 57). See
+> [CONTRIBUTING.md](CONTRIBUTING.md) if the dev client crashes at launch.
 
 The screen exercises all 10 feature areas:
 
@@ -652,10 +665,12 @@ See [example/README.md](example/README.md) and [`example/App.tsx`](example/App.t
 ## Contributing
 
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
-[Code of Conduct](CODE_OF_CONDUCT.md). The project uses
-[Conventional Commits](https://www.conventionalcommits.org/); CI runs typecheck,
-lint, format, tests, build, `npm pack`, `size-limit` and an Android Gradle
-compile. Releases are automated with `semantic-release`.
+[Code of Conduct](CODE_OF_CONDUCT.md). The project uses [Conventional Commits](https://www.conventionalcommits.org/); CI runs
+typecheck, lint, format, tests, build, `npm pack`, `size-limit`, and Android
+Gradle compile. Verify native/example changes on both Android and iOS (see
+CONTRIBUTING). Releases are automated with `semantic-release`.
+
+Repository: [github.com/bhavesh2706/smart-otp](https://github.com/bhavesh2706/smart-otp)
 
 ## License
 
