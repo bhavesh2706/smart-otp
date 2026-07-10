@@ -16,7 +16,7 @@ import type { OTPInputType } from '../utils/types';
 export interface UseClipboardPasteOptions {
   /** Exact code length to look for in the clipboard. */
   readonly length: number;
-  /** Called with a detected code (deduplicated against the previous match). */
+  /** Called with a detected code (automatic reads dedupe identical codes). */
   readonly onDetect: (code: string) => void;
   /** Character set to match. Defaults to `'numeric'`. */
   readonly type?: OTPInputType;
@@ -46,14 +46,20 @@ export interface UseClipboardPasteResult {
   readonly check: () => void;
 }
 
+interface ReadClipboardOptions {
+  /** When `false`, re-fire `onDetect` even if the code matches the last detection. */
+  readonly dedupe?: boolean;
+}
+
 /**
  * Detect a one-time code on the clipboard and surface it via `onDetect`.
  *
  * By default the hook reads the clipboard on mount and each time the app
  * returns to the foreground (the moment a user typically copies a code from
  * their Messages app and switches back). Continuous polling is opt-in via
- * `pollInterval`. Detected codes are deduplicated, so the same clipboard value
- * fires `onDetect` only once.
+ * `pollInterval`. Automatic reads (mount, foreground) deduplicate identical
+ * codes so the same clipboard value fires `onDetect` only once; manual
+ * {@link UseClipboardPasteResult.check} always re-applies a valid code.
  *
  * Degrades gracefully: when no clipboard reader is available (the optional
  * `@react-native-clipboard/clipboard` package is not installed and no custom
@@ -84,46 +90,53 @@ export function useClipboardPaste({
   const lastDetectedRef = useRef<string | null>(null);
   const mountedRef = useMounted();
 
+  const readClipboard = useCallback(
+    ({ dedupe = true }: ReadClipboardOptions = {}) => {
+      if (!enabled || !isSupported) {
+        return;
+      }
+      reader()
+        .then((contents) => {
+          if (!mountedRef.current || contents.length === 0) {
+            return;
+          }
+          const code = extractOTP(contents, type, length);
+          if (code !== null && (!dedupe || code !== lastDetectedRef.current)) {
+            lastDetectedRef.current = code;
+            onDetectRef.current(code);
+          }
+        })
+        .catch(() => {
+          // Clipboard read can reject (permissions, platform quirks). A failed
+          // read simply yields no detection; never surface it as an app error.
+        });
+    },
+    [enabled, isSupported, reader, type, length, mountedRef]
+  );
+
   const check = useCallback(() => {
-    if (!enabled || !isSupported) {
-      return;
-    }
-    reader()
-      .then((contents) => {
-        if (!mountedRef.current || contents.length === 0) {
-          return;
-        }
-        const code = extractOTP(contents, type, length);
-        if (code !== null && code !== lastDetectedRef.current) {
-          lastDetectedRef.current = code;
-          onDetectRef.current(code);
-        }
-      })
-      .catch(() => {
-        // Clipboard read can reject (permissions, platform quirks). A failed
-        // read simply yields no detection; never surface it as an app error.
-      });
-  }, [enabled, isSupported, reader, type, length, mountedRef]);
+    readClipboard({ dedupe: false });
+  }, [readClipboard]);
 
   useEffect(() => {
     if (!enabled || !isSupported) {
       return;
     }
 
-    check();
+    readClipboard();
 
     const subscription = AppState.addEventListener(
       'change',
       (status: AppStateStatus) => {
         if (status === 'active') {
-          check();
+          readClipboard();
         }
       }
     );
 
     const intervalId =
       pollInterval && pollInterval > 0
-        ? setInterval(check, pollInterval)
+        ? setInterval(() => readClipboard(), pollInterval)
         : null;
 
     return () => {
@@ -132,7 +145,7 @@ export function useClipboardPaste({
         clearInterval(intervalId);
       }
     };
-  }, [enabled, isSupported, pollInterval, check]);
+  }, [enabled, isSupported, pollInterval, readClipboard]);
 
   return { isSupported, check };
 }

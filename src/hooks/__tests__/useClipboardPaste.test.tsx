@@ -23,7 +23,30 @@ describe('useClipboardPaste', () => {
     await waitFor(() => expect(onDetect).toHaveBeenCalledWith('654321'));
   });
 
-  it('deduplicates repeated identical clipboard contents', async () => {
+  it('deduplicates automatic reads of identical clipboard contents', async () => {
+    jest.useFakeTimers();
+    const onDetect = jest.fn();
+    const getClipboardString = jest
+      .fn<Promise<string>, []>()
+      .mockResolvedValue('123456');
+    renderHook(() =>
+      useClipboardPaste({
+        length: 6,
+        onDetect,
+        getClipboardString,
+        pollInterval: 1000,
+      })
+    );
+    await waitFor(() => expect(onDetect).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    await waitFor(() => expect(getClipboardString.mock.calls.length).toBeGreaterThan(1));
+    expect(onDetect).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
+  it('manual check re-applies the same code', async () => {
     const onDetect = jest.fn();
     const getClipboardString = jest
       .fn<Promise<string>, []>()
@@ -35,7 +58,8 @@ describe('useClipboardPaste', () => {
     await act(async () => {
       result.current.check();
     });
-    expect(onDetect).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onDetect).toHaveBeenCalledTimes(2));
+    expect(onDetect).toHaveBeenNthCalledWith(2, '123456');
   });
 
   it('does nothing when disabled', () => {
